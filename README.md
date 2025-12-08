@@ -1,7 +1,5 @@
-# Joomla-LDAP-Authentication
-Joomla User Authentication: Active Directory and LDAP Authentication Extension
-
 # Joomla LDAP Integration with Active Directory (AD) Plugin
+Joomla User Authentication: Active Directory and LDAP Authentication Extension
 
 Simplify authentication on your Joomla site with **miniOrange’s LDAP Integration with Active Directory (AD) Plugin**. Perfect for organizations using an LDAP server, this plugin provides secure and seamless authentication, user synchronization, and centralized identity management.
 
