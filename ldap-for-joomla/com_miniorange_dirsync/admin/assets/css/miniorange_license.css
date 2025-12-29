@@ -1,0 +1,892 @@
+.mo_main_ldap_section {
+    background-color: #ffffff;
+    padding: var(--spacing-lg, 2rem) var(--spacing-xl, 9.375rem) !important;
+}
+.mo_ldap_mini_section{
+    background-color: #F3F7FC;
+    padding: 2em !important;
+    margin: 0.5rem;
+}
+
+.mo_ldap_mini_section .mo_boot_btn {
+    margin-top: 0 !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* Specific styling for addon block cards */
+.mo_boot_h-50 {
+    display: flex;
+    flex-direction: column;
+    height: auto !important;
+    min-height: 200px;
+}
+
+.mo_boot_h-50 .mo_boot_btn {
+    margin-top: auto;
+    margin-bottom: 0;
+}
+/*FOR NAV BAR*/
+.mo_ldap_nav-tab-wrapper {
+	overflow: hidden;	
+}
+.mo_ldap_nav-tab, .mo_ldap_nav-tab  a {
+	float: left;
+	color: #f2f2f2;
+	text-align: center;
+	padding: 15px 9px;
+	text-decoration: none;
+	font-size: 15px;
+	border: 0.01px solid #000000;
+	background-color: #001b4c;
+	text-wrap: nowrap;
+}
+.mo_ldap_nav-tab:hover, .mo_ldap_nav-tab:hover ,.mo_nav_tab_active{
+	background-color: #ffffff;
+	color:#000000;
+	border: 1px solid #000000;
+}
+
+.mo_ldap_heading{
+	font-size:20px;
+	color:var(--body-color);
+}
+.mo_ldap_heading::after{
+	height:4px;
+	display:block;
+	background-color:var(--body-color);
+	content:" ";
+	width:325px;
+	margin-top:11px
+}
+.mo_ldap_sub_heading{
+	font-size:24px
+}
+.mo_ldap_sub_heading::after{
+	height:2px;
+	display:block;
+	background-color:var(--body-color);
+	width:219px;
+	margin-top:11px
+}
+.mo_ldap_details_tag{
+	padding:5px;
+	border:none!important;
+	color:var(--body-color);
+	border:1px solid var(--body-color) !important;
+}
+.mo_ldap_summary_tag{
+	color:var(--body-color)!important;
+	padding:5px;
+	font-size:16px; 
+	font-weight:bold;
+}
+.mo_ldap_possible_search_bases{
+	border:1px solid var(--body-color);
+	border-radius: 3px;
+	padding:2%;
+	color:var(--body-color);
+}
+.mo_ldap_possible_search_bases:hover i {
+    transform: scale(1.1);
+}
+.mo_ldap_possible_search_bases .searchbase-text {
+    transition: color 0.3s;
+}
+@media (max-width: 1011px) {
+    .mo_ldap_possible_search_bases .searchbase-text {
+        display: none;
+    }
+}
+
+.mo_ldap_no_cursor{
+	cursor: not-allowed;
+}
+.mo_ldap_blue_buttons{
+	background-color:var(--template-bg-dark);
+	color: #fff;
+	border:1px solid var(--body-color);
+}
+.mo_ldap_blue_buttons:hover{
+	background-color: #001b4c;
+	color: #fff;
+}
+/* for license page */
+.mo_ldap_works-step div{
+    color:var(--body-color);
+	border: 2px solid var(--body-color);
+	border-radius: 50%;
+	width: 30px;
+    height: 30px;
+	text-align: center;
+	padding: 8px;
+	float: left;
+	font-size: 15px;
+	margin-right: 25px;
+	margin-bottom: 27px;
+}
+.mo_ldap_works-step p{
+    font-size:15px;
+	text-align: left;
+	font-family:Inter,sans-serif;
+}
+#mo_ldap_ot_tourconfig{
+    float: right;
+}
+#mo_ldap_export_configuration{
+	float:right;margin-right: 10px;
+}
+.mo_ldap_highlight{
+    color: red;
+}
+.mo_ldap_cursor-type{
+	cursor: pointer;
+}
+#mo_ldap_ot_tourattr{
+	float: right;  
+	margin-right: 10px;
+}
+.mo_ldap_hide_contend{
+	display: none;	
+}
+
+.mo_ldap_logo{
+    height:50px !important;
+	width:50px !important; 
+	background-image: url("../images/miniorange_i.ico");
+	line-height: 50px !important;
+	vertical-align: middle;
+}
+
+html * {-webkit-font-smoothing: antialiased;-moz-osx-font-smoothing: grayscale;}
+h1 {margin: .67em 0;font-size: 2em;}
+ul {list-style: none;padding: 0;margin: 0;}	
+li {list-style: none;padding: 0;margin: 0;}
+
+/* FOR SLIDER*/
+.mo_ldap_dir_search_switch{position:relative;display:inline-block;width:56px;height:26px}
+.mo_ldap_dir_search_switch input{opacity:0;width:0;height:0}
+.mo_ldap_dir_search_slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--body-bg);border:1px solid var(--body-color);-webkit-transition:.4s;transition:.4s}
+.mo_ldap_dir_search_slider:before{position:absolute;content:"";height:20px;width:21px;left:4px;bottom:3px;background-color:var(--body-color);-webkit-transition:.4s;transition:.4s}
+
+input:checked+.mo_ldap_dir_search_slider{background-color:var(--body-color);color:var(--body-color);border: 1px solid var(--body-bg);}
+input:focus+.mo_ldap_dir_search_slider{box-shadow:0 0 1px var(--template-bg-dark);}
+input:checked+.mo_ldap_dir_search_slider:before{-webkit-transform:translateX(26px);-ms-transform:translateX(26px);transform:translateX(26px);background-color:var(--body-bg);}
+
+.mo_ldap_dir_search_slider.round{border-radius:34px}
+.mo_ldap_dir_search_slider.round:before{border-radius:50%}
+.mo_ldap_premium_features{font-size:14px;}
+
+/* FAQ */
+.mo_ldap_faq_page {
+	margin : 0;font-size: 15px;cursor: pointer;border: none;outline: none;
+    transition: 0.4s;padding: 0.5em;line-height: 34px;letter-spacing: 0.2px;font-family:Inter,sans-serif;
+}
+.mo_ldap_faq_page:hover {
+	background-color: #ffffff;
+    color: #000000;
+}
+.mo_ldap_faq_page.mo_ldap_active {
+    color: #000000;
+}
+.mo_ldap_faq_body {
+    font-size: 14px;line-height: 1.5;padding: 2em 2em 0em 2em;display: none;overflow: hidden;
+}
+.mo_ldap_faq_page:hover {
+    background-color: #F2F2F2;
+}
+.mo_ldap_faq_page.mo_ldap_active {
+    background-color: #F2F2F2;
+}
+.mo_ldap_faq_page:after {
+    content: '\02795';font-size: 15px;color: #777; float: right;margin-left: 5px;
+}
+.mo_ldap_faq_page.mo_ldap_active:after {
+    content: "\2796";
+}
+.mo_ldap_hr_line{
+	display:block;content:" ";border: 1px solid var(--body-color);margin-top:11px
+}
+
+.mo_ldap_description{font-size:14px}
+.mo_ldap_feature_snippet{margin:0;gap:1rem;padding-top:.25rem;padding-bottom:.25rem}
+
+/*PRICING TAB*/
+.mo_ldap_pricing_card{border-right:1px solid;display:flex;flex-direction:column;--tw-border-opacity:1;border-color:rgb(203 213 225 / var(--tw-border-opacity));padding:1.5rem;color:var(--body-color)}
+.mo_ldap_pricing_card:hover {
+    background-color: rgba(203, 213, 225, 0.3); /* Light hover effect */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Soft shadow */
+    transform: translateY(-2px); /* Slight lift effect */
+}
+
+/* Fix for pricing cards height synchronization issue */
+.mo_boot_row.mo_boot_justify-content-center {
+    align-items: flex-start !important;
+}
+
+/* Ensure pricing cards don't stretch to match each other's height */
+.mo_boot_col-sm-6.mo_boot_col-md-6.mo_boot_col-lg-3 {
+    align-self: flex-start !important;
+}
+.mo_ldap_pricing_card.premium{--tw-bg-opacity:1;background-color:#263C59;--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity))}
+.mo_ldap_pricing_snippet_grid{--tw-bg-opacity:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));}
+.mo-button{
+	height:40px;align-items:center;justify-content:center;padding-left:1.5rem;padding-right:1.5rem;font-size:14px;font-weight:550;
+	width:100%;gap:.75rem;border-radius:.375rem;border-style:none;cursor:pointer;display:flex;text-align:center;text-decoration-line:none}
+.mo-button.premium{color:black;background-color: white;}
+.mo-button.primary,.text-white{color:rgb(255 255 255 / var(--tw-text-opacity));--tw-text-opacity:1}.grow{flex-grow:1}
+.mo-button.primary{--tw-bg-opacity:1;background-color:#263C59}.mo-button.primary:hover, .mo-button.premium:hover{--tw-bg-opacity:1;background-color:#3b5f90;color:white}
+.mo_ldap_pricing_page h1{font-size:1.5rem;font-weight:600;line-height:1.75rem}
+.mo_ldap_pricing_page h5{font-size:1.15rem;font-weight:500;line-height:1.75rem}
+.mo_ldap_pricing_card.premium h5{color:#ffffff}
+.mo-button:hover{text-decoration-line:none}
+.mo-button:disabled{--tw-bg-opacity:0.5;background-color:rgb(199 210 254 / var(--tw-bg-opacity))}
+@media (min-width:640px){.mo-button{width:auto}}
+
+/*STICKY SUPPORT*/
+.mo_sticky_support {width: 60px;height: 60px;background: linear-gradient(to bottom right, #0f151d, #0f151d);border-radius: 30px;position: relative;text-decoration:none;}
+.mo_contact-us-container{position:fixed;right:2rem;bottom:2.5rem}
+.gap-mo-4{gap:1rem}
+.flex{display:flex}
+.mo_contact_us_box{
+	position:relative;display:flex;height:60px;flex:1 1 0%;align-items:center;background-image:linear-gradient(to right,var(--tw-gradient-stops));
+	--tw-gradient-from:#0f151d;--tw-gradient-to:rgb(37 99 235 / 0);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to);--tw-gradient-to:#0f151d;
+	padding-left:1rem;padding-right:1rem
+}
+
+/*ADD-ONS*/
+/* @media screen and (max-width:1420px) {
+    .vaddons {display: none;}
+} */
+.mo_addon_tab {
+    justify-content: flex-start;
+	margin-bottom: 3em;
+	height: 350px;
+	overflow-y: scroll;
+}
+
+.mo_addon_tab::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px var(--body-color);
+	border-radius: 10px;
+}
+.mo_addon_tab::-webkit-scrollbar {
+    width: 7px;
+}
+
+.mo_addon_tab::-webkit-scrollbar-thumb {
+    border-radius: 10px; 
+}
+
+.addon_tab-box {
+    height: 250px; 
+	justify-content: center;	
+}
+
+.mo_addon_tab_btn {
+	font-family: "Poppins", sans-serif;
+    font-size: 1.1em; 
+	font-weight: 400;
+	border: 1px solid #FFFFFF; 
+	border-radius: 0;
+	text-align: left;
+	transition: all 0.3s;
+	width:-webkit-fill-available; 
+	background-color:#001b4c;
+   	color:#fff;
+}
+
+.mo_addon_tab_btn.active {
+   width: -webkit-fill-available;
+   background-color: #FFFFFF;
+   color: #000000;
+}
+
+.mo_addon_tab_btn:hover{
+	background-color: #FFFFFF;
+	color: #000000;
+}
+.addon_tab_content {
+    line-height: 1.5;
+	height: 100%;
+}
+.addon_tab_content h4 {
+    font-size: 1.7em;
+	margin-bottom: 0.5em;
+	color:var(--body-color);
+}
+.addon_tab_content p {
+    margin-bottom: 1em;
+	color:var(--body-color);
+}
+
+/* new css */ 
+.mo_ldap_blue_buttons:disabled{
+	color: #ffffff;
+	background-color: #001b4c;
+    cursor: not-allowed;
+}
+
+.mo_ldap_heading_btn{
+	float:right;
+	margin-right:10px;
+	font-weight:500;
+	border-radius:18px;
+	color:white;
+}
+
+.mo_ldap_heading_btn2, .mo_ldap_heading_btn2:hover{
+	float:right; 
+	margin-right:10px;
+	font-weight:500;
+	border-radius:18px;
+	background-color:#001b4c;
+	border:1px solid black;
+	color: #FFFFFF;
+	text-decoration:none;
+}
+
+.mo_ldap_white_color{
+	text-decoration:none;
+	color:white;
+}
+
+.mo_ldap_z-index{
+	z-index:1;
+}
+
+.mo_ldap_user_css{
+	border: 2px solid #949090;
+	word-wrap: break-word;
+}
+
+.mo_ldap_font_weight{
+	font-size:14px;
+	font-weight:bold;
+}
+
+.mo_ldap_float_right{
+	float:right;
+}
+
+.mo_ldap_price_heading{
+	font-size:1rem; 
+	margin-top:5%
+}
+
+.mo_ldap_price_content{
+	font-size:14px;
+	line-height:1.75rem;
+}
+
+.mo_ldap_premium_content{
+	margin-top: 0.2rem; 
+	margin-left: -8px;
+}
+
+.mo_ldap_premium_content{
+	font-weight:bold;
+	color:#263C59;
+	padding:2px;
+}
+
+.mo_ldap_display-block{
+	display: block;
+}
+
+.mo_ldap_bg_blue{
+	background-color:#001b4c;
+}
+
+.mo_ldap_color_red{
+	color: red;
+}
+
+.mo_ldap_height{
+	height:150px !important;
+}
+
+.crown_img_small {
+    width: 20px!important;
+    margin-right:10px;
+}
+
+select.mo-form-control[size], select.mo-form-control[multiple] {
+	height: auto;
+  }
+
+.mo-form-control {
+	display: block;
+	width: 100%;
+	height: calc(2.4rem)!important;
+	padding: 0.375rem 0.75rem;
+	font-size: 1rem;
+	font-weight: 400;
+	line-height: 1.5;
+	color: #000000;
+	background-color: #fff;
+	background-clip: padding-box;
+	border: 0.1px solid #ced4da;
+	border-radius: 0.25rem;
+	transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.mo_ldap_disabled_input {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+}
+
+.mo-form-control-select {
+height: calc(2.25rem + 2px);
+}
+
+input.form-control:disabled, input.form-control:read-only{
+	background-color: #FFFFFF;
+}
+
+/*# sourceMappingURL=bootstrap.css.map */
+
+/* Password Toggle Button Styles */
+.mo_password_toggle_btn {
+    border: none !important;
+    background: transparent !important;
+    top: 0 !important;
+    right: 0 !important;
+    height: 100% !important;
+    width: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: absolute !important;
+    z-index: 10 !important;
+    cursor: pointer !important;
+    color: #6c757d !important;
+    transition: all 0.2s ease !important;
+    padding: 0 !important;
+}
+
+.mo_password_toggle_btn i {
+    font-size: 16px !important;
+    color: #6c757d !important;
+    transition: all 0.2s ease !important;
+}
+
+.mo_password_toggle_btn:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    color: #495057 !important;
+}
+
+.mo_password_toggle_btn:hover i {
+    color: #495057 !important;
+    transform: scale(1.1);
+}
+
+.mo_password_toggle_btn:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.mo_password_toggle_btn:active {
+    transform: scale(0.95);
+}
+
+.mo_password_input {
+    padding-right: 40px !important;
+}
+
+/* LDAP Navbar Styles */
+.mo_ldap_nav-tab {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    transition: all 0.2s ease;
+    position: relative;
+    padding: 12px 20px;
+    text-decoration: none;
+    display: block;
+}
+
+.mo_ldap_nav-tab:hover {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    color: #000000 !important;
+    text-decoration: none !important;
+    border: none !important;
+}
+
+.mo_nav_tab_active {
+    background-color: #F0F4FB!important;
+    color: #000000 !important;
+    text-decoration: none !important;
+    border: none !important;
+    border-bottom: 3px solid #001B69 !important;
+    font-weight: 600 !important;
+}
+
+/* Log Table Styling */
+.mo_ldap_logs_table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  .mo_ldap_logs_table thead tr {
+    border-bottom: 2px solid #dee2e6;
+  }
+  
+  .mo_ldap_logs_table thead th {
+    border-bottom: 2px solid #dee2e6;
+    padding: 0.75rem;
+    font-weight: 600;
+  }
+  
+  .mo_ldap_logs_table tbody tr {
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .mo_ldap_logs_table tbody td {
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.75rem;
+    vertical-align: top;
+  }
+  
+  .mo_ldap_logs_table tbody tr:last-child td {
+    border-bottom: none;
+  }
+  
+
+
+/* Joomla Modal Styles */
+.joomla-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+}
+
+.joomla-modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 0;
+    border: 1px solid #ddd;
+    width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.joomla-modal-header {
+    background-color: #007bff;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid #0056b3;
+}
+
+.joomla-modal-title {
+    font-size: 18px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.joomla-modal-close {
+    color: #fff;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.joomla-modal-close:hover {
+    color: #f0f0f0;
+}
+
+.joomla-modal-body {
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 0 0 8px 8px;
+}
+
+.joomla-modal-body .form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.joomla-modal-body .form-control:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.joomla-modal-body label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.joomla-modal-body .btn {
+    margin: 5px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.joomla-modal-body .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.joomla-modal-body .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.joomla-modal-body .btn-outline-secondary {
+    background-color: transparent;
+    border-color: #6c757d;
+    color: #6c757d;
+}
+
+.joomla-modal-body .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+a::before
+{
+    content:""!important;
+}
+
+/* Custom validation styling for issue field to prevent black overlay */
+.mo-issue-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.mo_ldap_step_number {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px;    
+    min-height: 30px;
+    max-width: 30px;
+    max-height: 30px;
+    background-color: #3D618F;
+    color: white !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 15px;
+    box-sizing: border-box;
+    padding: 0;
+    line-height: 1;
+}
+.mo_works-step div{
+    color:#001b4c;
+    border: 2px solid #001b4c;
+    border-radius: 50%;
+    width: 37px;
+    height: 37px;
+    text-align: center;
+    padding: 9px;
+    float: left;
+    font-size: 15px;
+    margin-right: 25px;
+    margin-bottom: 25px;
+}
+
+.mo_works-step p{
+    font-size:15px;
+    text-align: left;
+    font-family:Inter,sans-serif;
+}
+.mo_works-step div{
+    color:#ffffff;
+    border: 2px solid #FFFFFF;
+}
+
+/* Dark Theme Support */
+:root[data-color-scheme=dark]
+{
+    /* Global defaults - Use Joomla's default dark colors */
+    body {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+    }
+
+    .mo_main_ldap_section {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+    }
+
+    .mo_ldap_mini_section {
+        background-color: #2e2e30 !important;
+        color: #FFFFFF !important;
+    }
+
+    h1, h2, h3, h4, h5, h6, p, div, label, td, th, a {
+        color: #FFFFFF !important;
+    }
+
+    /* Headings and sections */
+    .mo_ldap_sub_heading {
+        color: #FFFFFF !important;
+    }
+
+    /* Form elements */
+    .form-control, .form-select, .form-check-input {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+        border: 1px solid #1a1a1a !important;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+    }
+
+    select.form-select option, select.form-label {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+    }
+
+    .mo-form-control {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+        border: 1px solid #1a1a1a !important;
+    }
+
+    .mo-form-control-select {
+        height: calc(2.25rem + 2px);
+        color: #FFFFFF !important;
+        background-color: #000000 !important;
+        border: 1px solid #1a1a1a !important;
+    }
+
+    input.form-control:disabled, input.form-control:read-only {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+        opacity: 0.7;
+    }
+	input.form-control:disabled, input.form-control:read-only{
+		background-color: #000000;
+	}
+	/* User Details section dark theme styling */
+    .mo_ldap_attributes_container {
+        background-color: #2e2e30 !important;
+        border: 1px solid #555555 !important;
+    }
+
+    .mo_ldap_attributes_container .mo_ldap_logs_table thead th {
+        background-color: #2e2e30 !important;
+        color: #ffffff !important;
+        border: 1px solid #555555 !important;
+    }
+
+    .mo_ldap_attributes_container .mo_ldap_logs_table tbody td {
+        background-color: #2e2e30 !important;
+        color: #ffffff !important;
+        border: 1px solid #555555 !important;
+    }
+
+    .mo_ldap_attributes_container .mo_ldap_logs_table tbody tr {
+        border-bottom: 1px solid #555555 !important;
+    }
+
+    .mo_ldap_user_details {
+        background-color: #2e2e30 !important;
+        border: 1px solid #555555 !important;
+    }
+
+    .mo_ldap_user_details table thead th {
+        background-color: #2e2e30 !important;
+        color: #ffffff !important;
+        border: 1px solid #555555 !important;
+    }
+
+    .mo_ldap_user_details table tbody td {
+        background-color: #2e2e30 !important;
+        color: #ffffff !important;
+        border: 1px solid #555555 !important;
+    }
+
+    .mo_ldap_user_details table tbody tr {
+        border-bottom: 1px solid #555555 !important;
+    }
+
+    /* Navigation tabs dark theme support */
+    .mo_ldap_nav-tab {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+    }
+
+    .mo_ldap_nav-tab:hover {
+        background-color: rgba(0, 123, 255, 0.2) !important;
+        border-bottom: 3px solid #007bff !important;
+    }
+
+    .mo_nav_tab_active {
+        background-color: rgba(0, 123, 255, 0.2) !important;
+        border-bottom: 3px solid #001B69 !important;
+    }
+    .mo_ldap_addon_toggle_btn,.mo_ldap_step_number{
+        background-color: #33383F;
+    }
+    .mo_ldap_step_number {
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+    }
+
+}
+
+
+@media(max-width: 768px){
+
+
+    .mo_ldap_nav-tab .tab-label {
+        display: none;
+    }
+
+    .mo_ldap_nav-tab {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mo_ldap_nav-tab:hover .tab-label {
+        display: inline;
+        margin-left: 8px;
+    }
+
+    .mo_ldap_nav-tab:hover i {
+        transform: scale(1.2);
+        transition: transform 0.3s ease;
+    }
+
+}

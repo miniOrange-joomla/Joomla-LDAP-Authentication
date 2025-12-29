@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="component" version="5.1.4" method="upgrade">
+	<name>COM_MINIORANGE_DIRSYNC</name>
+    <version>6.4.1</version>
+    <author>miniOrange Security Software Pvt. Ltd.</author>
+    <creationDate>Dec 2019</creationDate>
+    <authorEmail>info@xecurify.com</authorEmail>
+    <authorUrl>http://miniorange.com</authorUrl>
+    <license>GNU General Public License version 3; see LICENSE.txt</license>
+    <copyright>Copyright (C) 2015 miniOrange. All rights reserved.</copyright>
+	<description>COM_MINIORANGE_DIRSYNC_DESCRIPTION</description>
+
+	<install> <!-- Runs on install -->
+		<sql>
+			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+		</sql>
+	</install>
+	<uninstall> <!-- Runs on uninstall -->
+		<sql>
+			<file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+		</sql>
+	</uninstall>
+
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/updates/mysql</schemapath>
+        </schemas>
+    </update>
+	<administration>
+		<!-- Administration Menu Section -->
+		<menu link="option=com_miniorange_dirsync&amp;view=accountsetup">COM_MINIORANGE_LDAP_MENU</menu>
+		<submenu>
+			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=ldapconfiguration">COM_MINIORANGE_TAB1_LDAP_CONFIGURATION</menu>
+			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=attributerolemapping">COM_MINIORANGE_TAB2_ATTRIBUTE_MAPPING_CONFIGURATION</menu>
+			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=signinsettings">COM_MINIORANGE_TAB3_LOGIN_SETTINGS_TAB</menu>
+			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=ntlmsso">COM_MINIORANGE_TAB4_LDAP_NTLM_SSO</menu>
+			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=addons">COM_MINIORANGE_TAB5_LDAP_PROVISIONING</menu>
+			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=licensing">COM_MINIORANGE_TAB6_UPGRADE</menu>
+            <menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=loggers">COM_MINIORANGE_TAB7_LOGGERS</menu>
+		</submenu>
+
+		<files folder="admin">
+			<!-- Admin Main File Copy Section -->
+			<filename>index.html</filename>
+			<filename>miniorange_dirsync.php</filename>
+			<filename>controller.php</filename>
+			<!-- helper files section -->
+			<folder>assets</folder>
+			<!-- helper files section -->
+			<folder>helpers</folder>
+			<!-- SQL files section -->
+			<folder>sql</folder>
+			<!-- models files section -->
+			<folder>models</folder>
+			<!-- views files section -->
+			<folder>views</folder>
+			<!-- controllers files section -->
+			<folder>controllers</folder>
+		</files>
+		<languages folder="admin/language">
+			<language tag="en-GB">en-GB/en-GB.com_miniorange_dirsync.ini</language>
+			<language tag="en-GB">en-GB/en-GB.com_miniorange_dirsync.sys.ini</language>
+			<language tag="de-DE">de-DE/de-DE.com_miniorange_dirsync.ini</language>
+			<language tag="de-DE">de-DE/de-DE.com_miniorange_dirsync.sys.ini</language>
+			<language tag="es-ES">es-ES/es-ES.com_miniorange_dirsync.ini</language>
+			<language tag="es-ES">es-ES/es-ES.com_miniorange_dirsync.sys.ini</language>
+			<language tag="fr-FR">fr-FR/fr-FR.com_miniorange_dirsync.ini</language>
+			<language tag="fr-FR">fr-FR/fr-FR.com_miniorange_dirsync.sys.ini</language>
+			<language tag="it-IT">it-IT/it-IT.com_miniorange_dirsync.ini</language>
+			<language tag="it-IT">it-IT/it-IT.com_miniorange_dirsync.sys.ini</language>
+			<language tag="nl-NL">nl-NL/nl-NL.com_miniorange_dirsync.ini</language>
+			<language tag="nl-NL">nl-NL/nl-NL.com_miniorange_dirsync.sys.ini</language>
+			<language tag="ja-JP">ja-JP/ja-JP.com_miniorange_dirsync.ini</language>
+			<language tag="ja-JP">ja-JP/ja-JP.com_miniorange_dirsync.sys.ini</language>
+			<language tag="ru-RU">ru-RU/ru-RU.com_miniorange_dirsync.ini</language>
+			<language tag="ru-RU">ru-RU/ru-RU.com_miniorange_dirsync.sys.ini</language>
+			<language tag="af-ZA">af-ZA/af-ZA.com_miniorange_dirsync.ini</language>
+			<language tag="af-ZA">af-ZA/af-ZA.com_miniorange_dirsync.sys.ini</language>
+			<language tag="hu-HU">hu-HU/hu-HU.com_miniorange_dirsync.ini</language>
+			<language tag="hu-HU">hu-HU/hu-HU.com_miniorange_dirsync.sys.ini</language>
+			<language tag="pt-BR">pt-BR/pt-BR.com_miniorange_dirsync.ini</language>
+			<language tag="pt-BR">pt-BR/pt-BR.com_miniorange_dirsync.sys.ini</language>
+			<language tag="el-GR">el-GR/el-GR.com_miniorange_dirsync.ini</language>
+			<language tag="el-GR">el-GR/el-GR.com_miniorange_dirsync.sys.ini</language>
+			<language tag="tr-TR">tr-TR/tr-TR.com_miniorange_dirsync.ini</language>
+			<language tag="tr-TR">tr-TR/tr-TR.com_miniorange_dirsync.sys.ini</language>
+			<language tag="da-DK">da-DK/da-DK.com_miniorange_dirsync.ini</language>
+			<language tag="da-DK">da-DK/da-DK.com_miniorange_dirsync.sys.ini</language>
+			<language tag="cs-CZ">cs-CZ/cs-CZ.com_miniorange_dirsync.ini</language>
+			<language tag="cs-CZ">cs-CZ/cs-CZ.com_miniorange_dirsync.sys.ini</language>
+			<language tag="zh-CN">zh-CN/zh-CN.com_miniorange_dirsync.ini</language>
+			<language tag="zh-CN">zh-CN/zh-CN.com_miniorange_dirsync.sys.ini</language>
+			<language tag="tr-TR">tr-TR/tr-TR.com_miniorange_dirsync.ini</language>
+			<language tag="tr-TR">tr-TR/tr-TR.com_miniorange_dirsync.sys.ini</language>
+			<language tag="th-TH">th-TH/th-TH.com_miniorange_dirsync.ini</language>
+			<language tag="th-TH">th-TH/th-TH.com_miniorange_dirsync.sys.ini</language>
+			<language tag="sv-SE">sv-SE/sv-SE.com_miniorange_dirsync.ini</language>
+			<language tag="sv-SE">sv-SE/sv-SE.com_miniorange_dirsync.sys.ini</language>
+			<language tag="sr-YU">sr-YU/sr-YU.com_miniorange_dirsync.ini</language>
+			<language tag="sr-YU">sr-YU/sr-YU.com_miniorange_dirsync.sys.ini</language>
+			<language tag="sr-RS">sr-RS/sr-RS.com_miniorange_dirsync.ini</language>
+			<language tag="sr-RS">sr-RS/sr-RS.com_miniorange_dirsync.sys.ini</language>
+		</languages>
+	</administration>
+
+	<updateservers>
+		<server type="extension" priority="1" name="ldap">https://prod-marketing-site.s3.amazonaws.com/plugins/joomla/joomla_ldap_update.xml</server>
+	</updateservers>
+
+</extension>

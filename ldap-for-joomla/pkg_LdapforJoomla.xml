@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="5.1.4" type="package" method="upgrade">
+    <name>miniOrange LDAP Integration Package</name>
+    <packagename>LdapforJoomla</packagename>
+    <version>6.4.1</version>
+    <author>miniOrange Security Software Pvt. Ltd.</author>
+    <authorEmail>info@xecurify.com</authorEmail>
+    <authorUrl>http://miniorange.com</authorUrl>
+    <license>GNU General Public License version 3; see LICENSE.txt</license>
+    <copyright>Copyright (C) 2015 miniOrange. All rights reserved.</copyright>
+    <creationDate>Dec 2019</creationDate>
+    <description>miniOrange LDAP Plugin Installed Successfully!</description>
+    <scriptfile>pkg_script.php</scriptfile>
+    <files>
+        <file type="component" id="com_miniorange_dirsync" >com_miniorange_dirsync.zip</file>
+		<file type="plugin" id="miniorangedirsync" group="system">plg_system_miniorangedirsync.zip</file>
+        <file type="plugin" id="miniorangemoldap" group="authentication">plg_authentication_moldap.zip</file>
+    </files>
+    <languages>
+        <language tag="en-GB">language/en-GB/en-GB.pkg_ldapforjoomla.ini</language>
+        <language tag="en-GB">language/en-GB/en-GB.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="de-DE">language/de-DE/de-DE.pkg_ldapforjoomla.ini</language>
+        <language tag="de-DE">language/de-DE/de-DE.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="es-ES">language/es-ES/es-ES.pkg_ldapforjoomla.ini</language>
+        <language tag="es-ES">language/es-ES/es-ES.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="fr-FR">language/fr-FR/fr-FR.pkg_ldapforjoomla.ini</language>
+        <language tag="fr-FR">language/fr-FR/fr-FR.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="it-IT">language/it-IT/it-IT.pkg_ldapforjoomla.ini</language>
+        <language tag="it-IT">language/it-IT/it-IT.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="nl-NL">language/nl-NL/nl-NL.pkg_ldapforjoomla.ini</language>
+        <language tag="nl-NL">language/nl-NL/nl-NL.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="ja-JP">language/ja-JP/ja-JP.pkg_ldapforjoomla.ini</language>
+        <language tag="ja-JP">language/ja-JP/ja-JP.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="ru-RU">language/ru-RU/ru-RU.pkg_ldapforjoomla.ini</language>
+        <language tag="ru-RU">language/ru-RU/ru-RU.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="af-ZA">language/af-ZA/af-ZA.pkg_ldapforjoomla.ini</language>
+        <language tag="af-ZA">language/af-ZA/af-ZA.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="pt-BR">language/pt-BR/pt-BR.pkg_ldapforjoomla.ini</language>
+        <language tag="pt-BR">language/pt-BR/pt-BR.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="hu-HU">language/hu-HU/hu-HU.pkg_ldapforjoomla.ini</language>
+        <language tag="hu-HU">language/hu-HU/hu-HU.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="cs-CZ">language/cs-CZ/cs-CZ.pkg_ldapforjoomla.ini</language>
+        <language tag="cs-CZ">language/cs-CZ/cs-CZ.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="da-DK">language/da-DK/da-DK.pkg_ldapforjoomla.ini</language>
+        <language tag="da-DK">language/da-DK/da-DK.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="el-GR">language/el-GR/el-GR.pkg_ldapforjoomla.ini</language>
+        <language tag="el-GR">language/el-GR/el-GR.pkg_ldapforjoomla.sys.ini</language>
+        <language tag="tr-TR">language/tr-TR/tr-TR.pkg_ldapforjoomla.ini</language>
+        <language tag="tr-TR">language/tr-TR/tr-TR.pkg_ldapforjoomla.sys.ini</language>
+    </languages>
+	<updateservers>
+		<server type="extension" priority="1" name="ldap">https://prod-marketing-site.s3.amazonaws.com/plugins/joomla/joomla_ldap_update.xml</server>
+	</updateservers>
+	
+</extension>
