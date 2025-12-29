@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="5.1.4" type="plugin" group="system" method="upgrade">
+	<name>miniorange LDAP System Plugin</name>
+    <version>6.4.1</version>
+    <author>miniOrange Security Software Pvt. Ltd.</author>
+    <authorEmail>info@xecurify.com</authorEmail>
+    <authorUrl>www.miniorange.com</authorUrl>
+    <license>GNU General Public License version 3; see LICENSE.txt</license>
+    <copyright>Copyright (C) 2015 miniOrange. All rights reserved.</copyright>
+    <creationDate>Dec 2019</creationDate>
+    <description>PLG_SYSTEM_MINIORANGEDIRSYNC_XML_DESCRIPTION</description>
+	<files>
+		<filename plugin="miniorangedirsync">miniorangedirsync.php</filename>
+	</files>
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field
+					name="enabled"
+					type="radio"
+					label="Enable Plugin"
+					description="Enable or disable this plugin"
+					default="1"
+					>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+			</fieldset>
+		</fields>
+	</config>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/en-GB.plg_system_miniorangedirsync.ini</language>
+		<language tag="en-GB">en-GB/en-GB.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="de-DE">de-DE/de-DE.plg_system_miniorangedirsync.ini</language>
+		<language tag="de-DE">de-DE/de-DE.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="es-ES">es-ES/es-ES.plg_system_miniorangedirsync.ini</language>
+		<language tag="es-ES">es-ES/es-ES.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="fr-FR">fr-FR/fr-FR.plg_system_miniorangedirsync.ini</language>
+		<language tag="fr-FR">fr-FR/fr-FR.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="it-IT">it-IT/it-IT.plg_system_miniorangedirsync.ini</language>
+		<language tag="it-IT">it-IT/it-IT.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="nl-NL">nl-NL/nl-NL.plg_system_miniorangedirsync.ini</language>
+		<language tag="nl-NL">nl-NL/nl-NL.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="ja-JP">ja-JP/ja-JP.plg_system_miniorangedirsync.ini</language>
+		<language tag="ja-JP">ja-JP/ja-JP.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="ru-RU">ru-RU/ru-RU.plg_system_miniorangedirsync.ini</language>
+		<language tag="ru-RU">ru-RU/ru-RU.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="af-ZA">af-ZA/af-ZA.plg_system_miniorangedirsync.ini</language>
+		<language tag="af-ZA">af-ZA/af-ZA.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="pt-BR">pt-BR/pt-BR.plg_system_miniorangedirsync.ini</language>
+		<language tag="pt-BR">pt-BR/pt-BR.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="hu-HU">hu-HU/hu-HU.plg_system_miniorangedirsync.ini</language>
+		<language tag="hu-HU">hu-HU/hu-HU.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="cs-CZ">cs-CZ/cs-CZ.plg_system_miniorangedirsync.ini</language>
+		<language tag="cs-CZ">cs-CZ/cs-CZ.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="da-DK">da-DK/da-DK.plg_system_miniorangedirsync.ini</language>
+		<language tag="da-DK">da-DK/da-DK.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="el-GR">el-GR/el-GR.plg_system_miniorangedirsync.ini</language>
+		<language tag="el-GR">el-GR/el-GR.plg_system_miniorangedirsync.sys.ini</language>
+		<language tag="tr-TR">tr-TR/tr-TR.plg_system_miniorangedirsync.ini</language>
+		<language tag="tr-TR">tr-TR/tr-TR.plg_system_miniorangedirsync.sys.ini</language>
+	</languages>
+	<updateservers>
+		<server type="extension" priority="1" name="ldap">https://prod-marketing-site.s3.amazonaws.com/plugins/joomla/joomla_ldap_update.xml</server>
+	</updateservers>
+</extension>
