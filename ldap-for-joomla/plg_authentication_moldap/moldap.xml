@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="5.1.4" type="plugin" group="authentication" method="upgrade">
+	<name>miniorange LDAP Login Plugin</name>
+	<author>miniOrange Security Software Pvt. Ltd.</author>
+	<authorEmail>info@xecurify.com</authorEmail>
+    <authorUrl>www.miniorange.com</authorUrl>
+    <license>GNU General Public License version 3; see LICENSE.txt</license>
+    <copyright>Copyright (C) 2015 miniOrange. All rights reserved.</copyright>
+    <creationDate>Dec 2019</creationDate>
+    <version>6.4.1</version>
+	<description>Authentication file for LDAP</description>
+
+	<files>
+		<filename plugin="moldap">moldap.php</filename>
+	</files>	
+	<scriptfile>my_script.php</scriptfile>
+	  <languages>
+        <language tag="en-GB">language/en-GB/en-GB.plg_authentication_moldap.ini</language>
+        <language tag="en-GB">language/en-GB/en-GB.plg_authentication_moldap.sys.ini</language>
+		<language tag="de-DE">language/de-DE/de-DE.plg_authentication_moldap.ini</language>
+        <language tag="de-DE">language/de-DE/de-DE.plg_authentication_moldap.sys.ini</language>
+		<language tag="es-ES">language/es-ES/es-ES.plg_authentication_moldap.ini</language>
+        <language tag="es-ES">language/es-ES/es-ES.plg_authentication_moldap.sys.ini</language>
+		<language tag="fr-FR">language/fr-FR/fr-FR.plg_authentication_moldap.ini</language>
+        <language tag="fr-FR">language/fr-FR/fr-FR.plg_authentication_moldap.sys.ini</language>
+		<language tag="it-IT">language/it-IT/it-IT.plg_authentication_moldap.ini</language>
+        <language tag="it-IT">language/it-IT/it-IT.plg_authentication_moldap.sys.ini</language>
+		<language tag="nl-NL">language/nl-NL/nl-NL.plg_authentication_moldap.ini</language>
+        <language tag="nl-NL">language/nl-NL/nl-NL.plg_authentication_moldap.sys.ini</language>
+		<language tag="ja-JP">language/ja-JP/ja-JP.plg_authentication_moldap.ini</language>
+        <language tag="ja-JP">language/ja-JP/ja-JP.plg_authentication_moldap.sys.ini</language>
+		<language tag="ru-RU">language/ru-RU/ru-RU.plg_authentication_moldap.ini</language>
+        <language tag="ru-RU">language/ru-RU/ru-RU.plg_authentication_moldap.sys.ini</language>
+		<language tag="af-ZA">language/af-ZA/af-ZA.plg_authentication_moldap.ini</language>
+        <language tag="af-ZA">language/af-ZA/af-ZA.plg_authentication_moldap.sys.ini</language>
+		<language tag="pt-BR">language/pt-BR/pt-BR.plg_authentication_moldap.ini</language>
+        <language tag="pt-BR">language/pt-BR/pt-BR.plg_authentication_moldap.sys.ini</language>
+		<language tag="hu-HU">language/hu-HU/hu-HU.plg_authentication_moldap.ini</language>
+        <language tag="hu-HU">language/hu-HU/hu-HU.plg_authentication_moldap.sys.ini</language>
+		<language tag="da-DK">language/da-DK/da-DK.plg_authentication_moldap.ini</language>
+        <language tag="da-DK">language/da-DK/da-DK.plg_authentication_moldap.sys.ini</language>
+		<language tag="el-GR">language/el-GR/el-GR.plg_authentication_moldap.ini</language>
+        <language tag="el-GR">language/el-GR/el-GR.plg_authentication_moldap.sys.ini</language>
+		<language tag="cs-CZ">language/cs-CZ/cs-CZ.plg_authentication_moldap.ini</language>
+        <language tag="cs-CZ">language/cs-CZ/cs-CZ.plg_authentication_moldap.sys.ini</language>
+    </languages>
+	<config>
+		<fields name="params">	
+		</fields>
+	</config>
+
+	<updateservers>
+		<server type="extension" priority="1" name="ldap">https://prod-marketing-site.s3.amazonaws.com/plugins/joomla/joomla_ldap_update.xml</server>
+	</updateservers>
+
+</extension>
