@@ -30,6 +30,7 @@ defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\Database\DatabaseInterface;
 class plgAuthenticationMoLdapInstallerScript
 {
     /**
@@ -42,8 +43,7 @@ class plgAuthenticationMoLdapInstallerScript
     public function install($parent) 
     {
 
-			
-          $db=Factory::getDbo();
+          $db=Factory::getContainer()->get(DatabaseInterface::class);
           $query=$db->getQuery(true);
           $query->update('#__extensions');
           $query->set($db->quoteName('enabled') . '=1');

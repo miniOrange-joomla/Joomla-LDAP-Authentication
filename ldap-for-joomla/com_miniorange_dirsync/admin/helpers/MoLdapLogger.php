@@ -16,6 +16,8 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Factory;
+use Joomla\Database\DatabaseInterface;
+require_once dirname(__FILE__) . '/DatabaseHelper.php';
 
 class MoLdapLogger
 {
@@ -77,7 +79,7 @@ class MoLdapLogger
     public static function isLoggingEnabled(): bool
     {
         try {
-            $db = Factory::getDbo();
+            $db = MoDatabaseHelper::getDb();
             $query = $db->getQuery(true)->select($db->quoteName('mo_ldap_enable_logger'))->from($db->quoteName('#__miniorange_dirsync_config'))->where($db->quoteName('id') . ' = 1');
 
             $db->setQuery($query);
@@ -104,7 +106,7 @@ class MoLdapLogger
      */
     private static function saveLogToDatabase(string $message, string $type, string $file, int $line, string $function): void
     {
-        $db = Factory::getDbo();
+        $db = MoDatabaseHelper::getDb();
         $query = $db->getQuery(true);
 
         // Define maximum log entries allowed
@@ -197,7 +199,7 @@ class MoLdapLogger
      */
     public static function getAllLogs(): array
     {
-        $db = Factory::getDbo();
+        $db = MoDatabaseHelper::getDb();
         $query = $db->getQuery(true)->select($db->quoteName(['timestamp', 'log_level', 'message', 'file', 'line_number', 'function_call']))->from($db->quoteName('#__mo_ldap_logs'))->order($db->quoteName('timestamp') . ' DESC');
 
         return $db->setQuery($query)->loadObjectList() ?: [];

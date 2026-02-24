@@ -14,6 +14,8 @@
 defined( '_JEXEC' ) or die( 'Restricted access' );
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\Database\DatabaseInterface;
+require_once dirname(__FILE__) . '/DatabaseHelper.php';
 class MoLdapUtility{
 
 	public static function mo_ldap_is_customer_registered() {
@@ -50,11 +52,11 @@ class MoLdapUtility{
 	
 	public static function mo_ldap_get_plugin_version()
 	{
-		$db=Factory::getDbo();
-		$dbQuery=$db->getQuery(true)
-		->select('manifest_cache')
-		->from($db->quoteName('#__extensions'))
-		->where($db->quoteName('element') . "=" . $db->quote('com_miniorange_dirsync'));
+		$db = MoDatabaseHelper::getDb();
+		$dbQuery = $db->getQuery(true)
+			->select('manifest_cache')
+			->from($db->quoteName('#__extensions'))
+			->where($db->quoteName('element') . "=" . $db->quote('com_miniorange_dirsync'));
 		$db->setQuery($dbQuery);
 		$manifest=json_decode($db->loadResult());
 
@@ -181,14 +183,14 @@ class MoLdapUtility{
 		$message=Text::_('COM_MINIORANGE_CONNECTION_FAILED');
         return $message;
 
-    }
-    public static function getUserGroupName($groupId)
-    {
-        $db = Factory::getDbo();
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('title'))
-            ->from($db->quoteName('#__usergroups'))
-            ->where($db->quoteName('id') . ' = ' . (int) $groupId);
+	}
+	public static function getUserGroupName($groupId)
+	{
+		$db = MoDatabaseHelper::getDb();
+		$query = $db->getQuery(true)
+			->select($db->quoteName('title'))
+			->from($db->quoteName('#__usergroups'))
+			->where($db->quoteName('id') . ' = ' . (int) $groupId);
 
         $db->setQuery($query);
         return $db->loadResult() ?: 'Unknown Group';
@@ -201,9 +203,9 @@ class MoLdapUtility{
      * @return bool True if updated, false otherwise
      */
     public static function updateUserAlreadyExist($userId): bool
-    {
-        // Get the database object
-        $db = Factory::getDbo();
+	{
+		// Get the database object
+		$db = MoDatabaseHelper::getDb();
 
         // Query to get the current value of 'user_already_exist' for the user
         $query = $db->getQuery(true);
@@ -230,7 +232,7 @@ class MoLdapUtility{
 	
 	public static function mo_ldap_get_joomla_groups(){
 
-		$db=Factory::getDbo();
+		$db = MoDatabaseHelper::getDb();
 		$db->setQuery($db->getQuery(true)
 			->select('*')
 			->from("#__usergroups")
@@ -240,7 +242,7 @@ class MoLdapUtility{
 
 	public static function moLdapUpdateData($tableName,$tableFields,$tableConditions){
 		
-		$db=Factory::getDbo();
+		$db = MoDatabaseHelper::getDb();
 		$query=$db->getQuery(true);
 		$sanFields=array();
 		foreach ($tableFields as $key=>$value){
@@ -259,7 +261,7 @@ class MoLdapUtility{
 
 	public static function moLdapFetchData($tableName,$condition=TRUE,$method='loadAssoc',$columns='*'){
 
-		$db=Factory::getDbo();
+		$db = MoDatabaseHelper::getDb();
 		$query=$db->getQuery(true);
 		$columns=is_array($columns)?$db->quoteName($columns):$columns;
 		$query->select($columns);
@@ -424,10 +426,10 @@ class MoLdapUtility{
 		return $input;
 	}
 
-    public static function exportData($tableNames)
-    {
-        $db = Factory::getDbo();
-        $jsonData = [];
+	public static function exportData($tableNames)
+	{
+		$db = MoDatabaseHelper::getDb();
+		$jsonData = [];
 
         if (empty($tableNames)) {
             $jsonData['error'] = 'No table names provided.';
@@ -470,8 +472,8 @@ class MoLdapUtility{
         // This allows JavaScript to detect the download and reset the button state
     }
 
-	public static function mo_ldap_get_details(String $tablename){
-		$db = Factory::getDbo();
+	public static function mo_ldap_get_details(string $tablename){
+		$db = MoDatabaseHelper::getDb();
 		$query = $db->getQuery(true);
 		$query->select('*');
 		$query->from($db->quoteName($tablename));

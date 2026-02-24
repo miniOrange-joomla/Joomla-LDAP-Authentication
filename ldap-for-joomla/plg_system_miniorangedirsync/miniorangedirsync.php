@@ -17,7 +17,8 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\Installer;
 use Joomla\CMS\Uri\Uri;
-jimport( 'joomla.plugin.plugin' );
+use Joomla\Database\DatabaseInterface;
+jimport('joomla.plugin.plugin');
 
 
 class plgSystemMiniorangedirsync extends CMSPlugin
@@ -31,9 +32,9 @@ class plgSystemMiniorangedirsync extends CMSPlugin
 		$app = Factory::getApplication();
 		$input = method_exists($app, 'getInput') ? $app->getInput() : $app->input;
 		$post = ($input && $input->post) ? $input->post->getArray() : [];
-		$tables = Factory::getDbo()->getTableList();
+		$tables = Factory::getContainer()->get(DatabaseInterface::class)->getTableList();
 		$tab = 0;
-		
+
 		// Check if config table exists
 		foreach ($tables as $table) {
 			if (strpos($table, "miniorange_dirsync_config") !== FALSE) {
@@ -54,7 +55,7 @@ class plgSystemMiniorangedirsync extends CMSPlugin
 				
 				// Mark feedback as submitted
 				try {
-					$db = Factory::getDbo();
+					$db = Factory::getContainer()->get(DatabaseInterface::class);
 					$query = $db->getQuery(true);
 					$query->update('#__miniorange_dirsync_config')
 						->set($db->quoteName('uninstall_feedback') . ' = 1')
@@ -66,7 +67,7 @@ class plgSystemMiniorangedirsync extends CMSPlugin
 				}
 				
 				// Get admin email and phone
-				$db = Factory::getDbo();
+				$db = Factory::getContainer()->get(DatabaseInterface::class);
 				try {
 					$query = $db->getQuery(true);
 					$query->select('admin_email, admin_phone')
@@ -103,7 +104,7 @@ class plgSystemMiniorangedirsync extends CMSPlugin
 				// Uninstall all LDAP components
 				if (isset($post['result']) && is_array($post['result'])) {
 					foreach ($post['result'] as $fbkey) {
-						$db = Factory::getDbo();
+						$db = Factory::getContainer()->get(DatabaseInterface::class);
 						$query = $db->getQuery(true);
 						$query->select('type, name')
 							->from($db->quoteName('#__extensions'))
@@ -131,7 +132,7 @@ class plgSystemMiniorangedirsync extends CMSPlugin
 								if (!$installer) {
 									$installer = new Installer();
 									if (method_exists($installer, 'setDatabase')) {
-										$installer->setDatabase(Factory::getDbo());
+										$installer->setDatabase(Factory::getContainer()->get(DatabaseInterface::class));
 									}
 								}
 								
@@ -155,9 +156,9 @@ class plgSystemMiniorangedirsync extends CMSPlugin
 		$app = Factory::getApplication();
 		$input = method_exists($app, 'getInput') ? $app->getInput() : $app->input;
 		$post = ($input && $input->post) ? $input->post->getArray() : [];
-		$tables = Factory::getDbo()->getTableList();
-		$db = Factory::getDbo();
-		
+		$tables = Factory::getContainer()->get(DatabaseInterface::class)->getTableList();
+		$db = Factory::getContainer()->get(DatabaseInterface::class);
+
 		// Get component extension IDs
 		$query = $db->getQuery(true);
 		$query->select('extension_id')
@@ -221,7 +222,8 @@ class plgSystemMiniorangedirsync extends CMSPlugin
     {
         ?>
         <link rel="stylesheet" type="text/css" href="<?php echo Uri::base();?>/components/com_miniorange_dirsync/assets/css/style.css" />
-        <div class="form-style-6" style="width:35% !important; margin-left:33%; margin-top: 4%;">
+        <div class="form-style-6" style="width:35% !important; margin-left:33%; margin-top: 4%; position: relative;">
+            <span onclick="skipLdapForm()" style="position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer;" title="Skip Feedback">&times;</span>
             <h1>Feedback form for LDAP Free Plugin</h1>
             <form name="f" method="post" action="" id="ldap_feedback" style="background: #f3f1f1; padding: 10px;">
                 <h3>What Happened? </h3>
@@ -264,11 +266,8 @@ class plgSystemMiniorangedirsync extends CMSPlugin
                         </div>
                 </div>
             </form>
-            <form name="f" method="post" action="" id="ldap_feedback_form_close">
+            <form name="f" method="post" action="" id="ldap_feedback_form_close" style="display:none;">
                 <input type="hidden" name="ldap_skip_feedback" value="ldap_skip_feedback"/>
-                <div style="text-align:center">
-                    <button class="mo_boot_btn btn-users_sync" onClick="skipLdapForm()">Skip Feedback</button>
-                </div>
                 <?php
                     foreach ($tpostData['cid'] as $key) { ?>
                         <input type="hidden" name="result[]" value=<?php echo $key ?>>

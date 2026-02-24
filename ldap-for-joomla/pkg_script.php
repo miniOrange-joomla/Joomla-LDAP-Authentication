@@ -29,7 +29,8 @@ class pkg_LDAPFORJOOMLAInstallerScript
     private function addUserColumn(): void
     {
         try {
-            $db = Factory::getDbo();
+            require_once JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/DatabaseHelper.php';
+            $db = MoDatabaseHelper::getDb();
             $query = "ALTER TABLE `#__users` ADD COLUMN IF NOT EXISTS `user_already_exist` int(2) DEFAULT 0";
             $db->setQuery($query);
             $db->execute();

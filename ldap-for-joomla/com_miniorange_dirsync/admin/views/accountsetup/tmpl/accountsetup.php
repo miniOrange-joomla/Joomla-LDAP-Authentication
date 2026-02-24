@@ -782,6 +782,7 @@ function moLdapAttributeMapping(){
                                     ->setSelectedValue(isset($email) ? $email : '')
                                     ->setPlaceholder('COM_MINIORANGE_SELECT_USERNAME')
                                     ->setRequired(true)
+                                    ->setHelpTitle(Text::_('COM_MINIORANGE_SELECT_EMAIL_DESCRIPTION'))
                                     ->setLayout(4, 7, 1);
                                 
                                 echo FormRenderer::renderField($emailMappingConfig);
@@ -792,6 +793,7 @@ function moLdapAttributeMapping(){
                                     ->setSelectedValue(isset($name) ? $name : '')
                                     ->setPlaceholder('COM_MINIORANGE_SELECT_NAME')
                                     ->setRequired(true)
+                                    ->setHelpTitle(Text::_('COM_MINIORANGE_SELECT_NAME_DESCRIPTION'))
                                     ->setLayout(4, 7, 1);
                                 
                                 echo FormRenderer::renderField($nameMappingConfig);
@@ -838,7 +840,7 @@ function moLdapAttributeMapping(){
                             // Address1 Mapping
                             $addressMappingConfig = (new FormFieldConfig('address_mapping', Text::_('COM_MINIORANGE_ADDRESS1')))
                                 ->setType('dropdown')
-                                ->setOptions(['select' => 'Select', 'streetAddress' => 'Street Address', 'postalAddress' => 'Postal Address', 'homePostalAddress' => 'Home Postal Address'])
+                                ->setOptions(['streetAddress' => 'Street Address', 'postalAddress' => 'Postal Address', 'homePostalAddress' => 'Home Postal Address'])
                                 ->setSelectedValue(isset($name) ? $name : '')
                                 ->setPlaceholder('COM_MINIORANGE_SELECT_ATTRIBUTE')
                                 ->setLayout(4, 7, 1);
@@ -847,7 +849,7 @@ function moLdapAttributeMapping(){
                             // City Mapping
                             $cityMappingConfig = (new FormFieldConfig('city_mapping', Text::_('COM_MINIORANGE_CITY')))
                                 ->setType('dropdown')
-                                ->setOptions(['select' => 'Select', 'l' => 'L', 'localityName' => 'Locality Name'])
+                                ->setOptions(['l' => 'L', 'localityName' => 'Locality Name'])
                                 ->setSelectedValue(isset($name) ? $name : '')
                                 ->setPlaceholder(Text::_('COM_MINIORANGE_SELECT_ATTRIBUTE'))
                                 ->setLayout(4, 7, 1);
@@ -856,7 +858,7 @@ function moLdapAttributeMapping(){
                             // Phone Mapping
                             $phoneMappingConfig = (new FormFieldConfig('phone_mapping', Text::_('COM_MINIORANGE_PHONE')))
                                 ->setType('dropdown')
-                                ->setOptions(['select' => 'Select', 'telephoneNumber' => 'Telephone Number', 'mobile' => 'Mobile', 'homePhone' => 'Home Phone'])
+                                ->setOptions(['telephoneNumber' => 'Telephone Number', 'mobile' => 'Mobile', 'homePhone' => 'Home Phone'])
                                 ->setSelectedValue(isset($name) ? $name : '')
                                 ->setPlaceholder(Text::_('COM_MINIORANGE_SELECT_ATTRIBUTE'))
                                 ->setLayout(4, 7, 1);
@@ -902,7 +904,7 @@ function moLdapAttributeMapping(){
                             // Department Mapping
                             $deptMappingConfig = (new FormFieldConfig('dept_mapping', Text::_('COM_MINIORANGE_DEPARTMENT')))
                                 ->setType('dropdown')
-                                ->setOptions(['select' => 'Select', 'department' => 'Department', 'division' => 'Division', 'company' => 'Company'])
+                                ->setOptions(['department' => 'Department', 'division' => 'Division', 'company' => 'Company'])
                                 ->setSelectedValue(isset($name) ? $name : '')
                                 ->setPlaceholder('COM_MINIORANGE_SELECT_ATTRIBUTE')
                                 ->setLayout(4, 7, 1);
@@ -911,7 +913,7 @@ function moLdapAttributeMapping(){
                             // Job Mapping
                             $jobMappingConfig = (new FormFieldConfig('job_mapping', Text::_('COM_MINIORANGE_JOB_TITLE')))
                                 ->setType('dropdown')
-                                ->setOptions(['select' => 'Select', 'title' => 'Title', 'jobTitle' => 'Job Title', 'businessCategory' => 'Business Category'])
+                                ->setOptions(['title' => 'Title', 'jobTitle' => 'Job Title', 'businessCategory' => 'Business Category'])
                                 ->setSelectedValue(isset($name) ? $name : '')
                                 ->setPlaceholder(Text::_('COM_MINIORANGE_SELECT_ATTRIBUTE'))
                                 ->setLayout(4, 7, 1);
@@ -920,7 +922,7 @@ function moLdapAttributeMapping(){
                             // Manager Mapping
                             $managerMappingConfig = (new FormFieldConfig('manager_mapping', Text::_('COM_MINIORANGE_MANAGER')))
                                 ->setType('dropdown')
-                                ->setOptions(['select' => 'Select', 'manager' => 'Manager', 'supervisor' => 'Supervisor'])
+                                ->setOptions(['manager' => 'Manager', 'supervisor' => 'Supervisor'])
                                 ->setSelectedValue(isset($name) ? $name : '')
                                 ->setPlaceholder(Text::_('COM_MINIORANGE_SELECT_ATTRIBUTE'))
                                 ->setLayout(4, 7, 1);
@@ -2125,7 +2127,8 @@ function moLdapSupportTab(){
                                 <form id="mo_ldap_contact_us" name="mo_ldap_contact_us"
                                       method="post" action="<?php echo Route::_(MoConstants::SUPPORT_CONTACT_URL); ?>"
                                       novalidate>
-                                    
+                                    <input type="hidden" name="mo_ldap_query_timezone" id="mo_ldap_query_timezone" value="">
+
                                     <!-- Email Field -->
                                     <div class="mb-4">
                                         <label for="mo_ldap_query_email" class="form-label fw-bold">
@@ -2198,12 +2201,12 @@ function moLdapSupportTab(){
                                         <textarea id="mo_ldap_query" 
                                                   class="form-control mo_boot_form-control" 
                                                   name="mo_ldap_query" 
-                                                  placeholder="<?php echo Text::_('COM_MINIORANGE_SUPPORT_QUERY');?>" 
+                                                  placeholder="<?php echo !empty($default_query) ? htmlspecialchars($default_query) : Text::_('COM_MINIORANGE_SUPPORT_QUERY'); ?>" 
                                                   rows="3"
                                                   minlength="10"
                                                   maxlength="2000"
                                                   style="resize: vertical; height: auto; min-height: 6rem;"
-                                                  required><?php echo htmlspecialchars($default_query); ?></textarea>
+                                                  required></textarea>
                                     </div>
 
                                     <!-- Configuration Checkbox -->

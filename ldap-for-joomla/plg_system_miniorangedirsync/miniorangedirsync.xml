@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension version="5.1.4" type="plugin" group="system" method="upgrade">
 	<name>miniorange LDAP System Plugin</name>
-    <version>6.4.1</version>
+    <version>6.4.2</version>
     <author>miniOrange Security Software Pvt. Ltd.</author>
     <authorEmail>info@xecurify.com</authorEmail>
     <authorUrl>www.miniorange.com</authorUrl>

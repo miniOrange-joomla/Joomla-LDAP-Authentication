@@ -63,6 +63,24 @@
 
         // Add character counter for query field
         addCharacterCounter(queryField);
+
+        // Capture browser timezone
+        captureTimezone();
+    }
+
+    /**
+     * Capture browser timezone
+     */
+    function captureTimezone() {
+        const timezoneField = document.getElementById('mo_ldap_query_timezone');
+        if (timezoneField) {
+            try {
+                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                timezoneField.value = timezone;
+            } catch (e) {
+                // Fallback will be handled by server if empty
+            }
+        }
     }
 
     /**

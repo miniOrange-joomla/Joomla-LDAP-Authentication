@@ -11,6 +11,32 @@ Simplify authentication on your Joomla site with **miniOrange’s LDAP Integrati
 
 ---
 
+
+## Installation
+
+Download the latest installable package from Releases:
+
+**[Download Joomla LDAP Latest Version](https://prod-marketing-site.s3.amazonaws.com/plugins/joomla/ldap-for-joomla.zip)**
+
+OR
+
+Go to **Releases → ldap-for-joomla.zip**
+
+---
+
+## Quick Setup:
+1. Login to Joomla Administrator  `https://your-site.com/administrator`
+2. Go to **Extensions → Manage → Install**  .
+3. Upload  the zip - ***ldap-for-joomla.zip*** or Search for the **LDAP Integration Plugin** and install it.
+4. Once Installation of plugin is successful. Now click on ***Get Started*** button.
+4. Configure plugin with the **[Setup Guide](https://plugins.miniorange.com/joomla-sso-ldap-mfa-solutions?section=ldap)** and connect your Joomla site with your LDAP server.
+
+
+## Dependencies:
+- **NONE** – No external dependencies required.
+
+---
+
 ## Versions & Features
 
 ### **Free Version**
@@ -54,18 +80,6 @@ Simplify authentication on your Joomla site with **miniOrange’s LDAP Integrati
 - **NTLM/Kerberos**: Auto-login from domain systems without credentials.  
 - **Directory Sync**: Sync Joomla user database with Active Directory.  
 - **Search Employee**: Look up user details directly in Active Directory.  
-
----
-
-## Quick Setup:
-1. Go to **Extensions → Manage → Install**  
-2. Search for the **LDAP Integration Plugin** and install it  
-3. Configure plugin settings to connect your Joomla site with your LDAP server  
-
----
-
-## Dependencies:
-- **NONE** – No external dependencies required.
 
 ---
 

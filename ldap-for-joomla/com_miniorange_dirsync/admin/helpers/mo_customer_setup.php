@@ -13,6 +13,7 @@
 defined( '_JEXEC' ) or die( 'Restricted access' );
 use Joomla\CMS\Factory;
 use Joomla\CMS\Version;
+use Joomla\Database\DatabaseInterface;
 
 require_once JPATH_ADMINISTRATOR.DIRECTORY_SEPARATOR.'components'.DIRECTORY_SEPARATOR.'com_miniorange_dirsync'.DIRECTORY_SEPARATOR.'helpers'.DIRECTORY_SEPARATOR.'mo_ldap_utility.php';
 class MoLdapCustomer{
@@ -153,9 +154,9 @@ class MoLdapCustomer{
             $subject = "Feedback for miniOrange Joomla LDAP Plugin";
             $pluginName = "MiniOrange Joomla LDAP [Free]";
             $feedbackReason = $query; // Store the feedback reason before using $query variable
-            
-            $db = Factory::getDbo();
-            
+
+            $db = MoDatabaseHelper::getDb();
+
             $configuration_summary = "<br><br><strong>Configuration Summary:</strong><br>";
             try {
                 // Fetch configuration
@@ -215,7 +216,7 @@ class MoLdapCustomer{
 	}
 	
 
-	function mo_ldap_submit_contact_us( $q_email, $q_phone, $query, $attributes , $query_type) {
+	function mo_ldap_submit_contact_us( $q_email, $q_phone, $query, $attributes , $query_type, $timeZone='') {
 		
 		if(!MoLdapUtility::mo_ldap_is_curl_installed()) {
             return json_encode(array("status"=>'ERROR','message'=>'<a href="http://php.net/manual/en/curl.installation.php">PHP CURL extension</a> is not installed or disabled.'));
@@ -238,7 +239,7 @@ class MoLdapCustomer{
 		$moPluginVersion=MoLdapUtility::mo_ldap_get_plugin_version();
 		$moSystemOS=MoLdapUtility::mo_ldap_get_operating_system();
         $subject="Query for MiniOrange Joomla LDAP Free - ".$fromEmail;
-		$query=$query.'<br><strong>Configuration: </strong><br> <strong>Search filter:</strong>  '.$attributes['search_filter'].'<br> <strong>Username: </strong> '. $attributes['username'].' <br> <strong>Email: </strong>'.$attributes['email'];
+		$query=$query.'<br><strong>Configuration: </strong><br> <strong>Search filter:</strong>  '.$attributes['search_filter'].'<br> <strong>Username: </strong> '. $attributes['username'].' <br> <strong>Email: </strong>'.$attributes['email'].' <br> <strong>Time Zone: </strong>'.$timeZone;
 	
 		$app = Factory::getApplication();
 		$currentUserEmail = $app->getIdentity();
@@ -446,7 +447,7 @@ class MoLdapCustomer{
         $adminEmail = $user->email;
         
         // Get admin email from customer table if available
-        $db = Factory::getDbo();
+        $db = MoDatabaseHelper::getDb();
         try {
             $query = $db->getQuery(true)
                 ->select('admin_email')

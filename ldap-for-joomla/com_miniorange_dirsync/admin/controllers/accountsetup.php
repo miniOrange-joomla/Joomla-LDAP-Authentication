@@ -24,6 +24,7 @@ $document->addScript(Uri::base() . 'components/com_miniorange_dirsync/assets/js/
 $document->addStyleSheet(Uri::base() . 'components/com_miniorange_dirsync/assets/css/miniorange_boot.css');
 $document->addStyleSheet(Uri::base() . 'components/com_miniorange_dirsync/assets/css/miniorange_license.css');
 require_once JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/mo_customer_setup.php';
+require_once JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/DatabaseHelper.php';
 
 class MiniorangeDirsyncControllerAccountsetup extends FormController
 {
@@ -83,14 +84,14 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
             $this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=moLoggers', Text::_('COM_MINIORANGE_MULTI_NO_PERMISSION_TO_SAVE'), 'error');
             return;
         }
-        
+
         // Get the value from form
         $input = Factory::getApplication()->input;
         $isEnabled = $input->getBool('mo_ldap_logger_toggle', 0);
-        
-        try {
-            // Update the DB
-            $db = Factory::getDbo();
+
+		try {
+			// Update the DB
+			$db = MoDatabaseHelper::getDb();
             $query = $db->getQuery(true)
                 ->update($db->quoteName('#__miniorange_dirsync_config'))
                 ->set($db->quoteName('mo_ldap_enable_logger') . ' = ' . $db->quote($isEnabled ? 1 : 0))
@@ -116,7 +117,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
      */
     public function resetLogs(): void
     {
-        $db = Factory::getDbo();
+		$db = MoDatabaseHelper::getDb();
 
         // Attempt to delete logs directly, only proceed if there are logs to delete
         $query = $db->getQuery(true)
@@ -144,9 +145,9 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
      * @throws Exception If there is a database error or other unexpected issue.
      */
     public function downloadLogs(): void
-    {
-        // Get Joomla database object
-        $db = Factory::getDbo();
+	{
+		// Get Joomla database object
+		$db = MoDatabaseHelper::getDb();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__mo_ldap_logs')) // Update table name if different
@@ -509,7 +510,7 @@ function moLdapSaveConfig()
     public function resetLdapSettings(): void
     {
         // Get the database object
-        $db = Factory::getDbo();
+		$db = MoDatabaseHelper::getDb();
 
         // Fetch current configuration to check if there is anything to reset
         $currentConfig = MoLdapUtility::moLdapFetchData('#__miniorange_dirsync_config', array('id' => '1'), 'loadAssoc');
@@ -1318,8 +1319,31 @@ function moLdapUpdatesearchbase()
 			$query=$post['mo_ldap_query'];
 			$email=$post['mo_ldap_query_email'];
 			$phone=$post['mo_ldap_query_phone'];
+			$user = Factory::getUser();
+			// Prioritize JS captured timezone
+			$timeZone = isset($post['mo_ldap_query_timezone']) ? $post['mo_ldap_query_timezone'] : '';
+			if (empty($timeZone)) {
+				$timeZone = $user->getParam('timezone');
+			}
+
+			// Fallback to site timezone
+			if (empty($timeZone)) {
+				$timeZone = Factory::getConfig()->get('offset');
+			}
+
+			// Final hard fallback (only if still empty)
+			if (empty($timeZone)) {
+				$timeZone = 'UTC';
+			}
+
+			try {
+				$date = new DateTime('now', new DateTimeZone($timeZone));
+				$displayTimezone = $timeZone . ' (UTC' . $date->format('P') . ')';
+			} catch (Exception $e) {
+				$displayTimezone = 'UTC (UTC+00:00)';
+			}
 			$contact_us=new MoLdapCustomer();
-			$submited=json_decode($contact_us->mo_ldap_submit_contact_us($email, $phone, $query, $attributes, $query_type),true);
+			$submited=json_decode($contact_us->mo_ldap_submit_contact_us($email, $phone, $query, $attributes, $query_type, $displayTimezone),true);
             if(json_last_error()==JSON_ERROR_NONE) {
                 if(is_array($submited) && array_key_exists('status', $submited) && $submited['status']=='ERROR'){
                     $this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=mo_ldap_trial_demo', $submited['message'],'error');
