@@ -17,7 +17,7 @@ Simplify authentication on your Joomla site with **miniOrange’s LDAP Integrati
 
 Download the latest installable package:
 
-**[Download Joomla LDAP Latest Version](https://plugins.miniorange.com/download/ldap)**
+**[Download Joomla LDAP Latest Version](https://prod-marketing-site.s3.amazonaws.com/plugins/joomla/ldap-for-joomla.zip)**
 
 OR
 
