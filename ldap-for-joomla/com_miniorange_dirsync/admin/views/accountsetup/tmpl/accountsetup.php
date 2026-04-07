@@ -161,6 +161,14 @@ if (version_compare($version->getShortVersion(), '4.0', '<=')) {
 
     </div>
 </div>
+
+    <div style="position: fixed; bottom: 30px; right: 30px; z-index: 9999;">
+        <a href="<?php echo Route::_('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=mo_ldap_trial_demo&query_type=configuration'); ?>"
+           class="mo_boot_btn mo_boot_btn-warning"
+           style="border-radius: 50px; padding: 12px 20px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                                <i class="fas fa-envelope"></i> Need Help?
+        </a>
+    </div>
     <div class="tab-content mo_ldap_tab-content">
         <div id="ldapconfiguration" class="tab-pane <?php echo $dirsync_active_tab == 'ldapconfiguration' ? 'active' : ''; ?>">
             <div class="mo_boot_row">
@@ -664,9 +672,11 @@ function moLdapLoginSettings()
                                     ->setDisabled(!$searchFilter)
                                     ->setLayout(4, 6, 0);
                                 
-                                echo FormRenderer::renderField($enableLoginConfig);
-                                echo Text::_('COM_MINIOARNGE_ENABLE_LOGIN_DETAILS_INFO');
-                            ?>
+                                echo FormRenderer::renderField($enableLoginConfig);?>
+                                <div class="alert alert-danger" role="alert">
+                                    <span class="icon-info-circle" aria-hidden="true"></span>
+                                    <?php echo Text::_('COM_MINIOARNGE_ENABLE_LOGIN_DETAILS_INFO'); ?>
+                                </div>
                         </div>
                         
                         <!--  Redirect URL Configuration -->
@@ -1340,7 +1350,7 @@ function moLdapLicensingPlan(){
                             echo FormRenderer::renderPlan(
                                 'premium',
                                 Text::_('COM_MINIORANGE_PLAN_PREMIUM'),
-                                '$449*',
+                                '$499*',
                                 Text::_('COM_MINIORANGE_CONTACT_US'),
                                 'link',
                                 [Text::_('COM_MINIORANGE_EVERYTHING_IN_BASIC'), Text::_('COM_MINIORANGE_PRIORITY_SUPPORT'), Text::_('COM_MINIORANGE_MULTIPLE_SEARCH_BASES'), Text::_('COM_MINIORANGE_CUSTOM_INTEGRATION_PAID')],

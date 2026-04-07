@@ -15,9 +15,10 @@ use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Document\HtmlDocument;
 use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Router\Route;
+ use Joomla\CMS\User\UserHelper;
+
 $document = Factory::getApplication()->getDocument();
 $document->addScript(Uri::base() . 'components/com_miniorange_dirsync/assets/js/jquery.1.11.0.min.js');
 $document->addScript(Uri::base() . 'components/com_miniorange_dirsync/assets/js/utilityjs.js');
@@ -218,7 +219,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 				);
 
 				MoLdapUtility::moLdapUpdateData($database_name, $updatefieldsarray,array('id'=>'1'));
-				MoLdapCustomer::mo_ldap_send_efficiency_tracking('Search Base & Search Filter Saved');
+				MoLdapCustomer::mo_ldap_send_efficiency_tracking('Basic Mapping Saved Successfully.');
 				$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=attributerolemapping', Text::_('COM_MINIORANGE_ATTRIBUTE_MAPPING_SAVED_SUCCESSFULLY'));
 			}
 		}else{
@@ -623,8 +624,8 @@ function moLdapTestAttributeMapping()
 		
 		// Simple styling using existing plugin patterns
 		echo '<style>
-			.mo_ldap_attr_success_message{color: #3c763d;background-color: #dff0d8; padding:2%;margin-bottom:20px;text-align:center; border:1px solid #AEDB9A; font-size:18pt;}
-			.mo_ldap_test_unsuccessful{color: white;background-color: #e06d6d; padding:2%;margin-bottom:20px;text-align:center; border:1px solid #AEDB9A; font-size:18pt;}
+			.mo_ldap_attr_success_message{color: #3c763d;background-color: #dff0d8; padding:1%;margin-bottom:10px;text-align:center; border:1px solid #AEDB9A; font-size:18pt;}
+			.mo_ldap_test_unsuccessful{color: white;background-color: #e06d6d; padding:1%;margin-bottom:10px;text-align:center; border:1px solid #AEDB9A; font-size:18pt;}
 			.mo_ldap_test_unsuccessful_details{margin-left:10px;padding:10px;border: 1px solid black;text-align:center}
 			table {border-collapse: collapse; width: 90%; margin: 20px auto;}
 			table, th, td {border: 1px solid #949090;}
@@ -691,6 +692,9 @@ function moLdapTestAttributeMapping()
 		$total_attributes = count($filtered_attributes);
 
 		echo '<div class="mo_ldap_attr_success_message">' . Text::_('COM_MINIORANGE_TEST_SUCCESSFUL') . '</div>';
+		if(UserHelper::getUserId($username) == 0) {
+			echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS6') . '</div>';
+		}
 		
 		echo '<input type="text" class="search-input" id="attributeSearch" placeholder="Search attributes..." onkeyup="filterAttributes()">';
 		

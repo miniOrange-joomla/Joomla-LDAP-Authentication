@@ -7,7 +7,7 @@
     <license>GNU General Public License version 3; see LICENSE.txt</license>
     <copyright>Copyright (C) 2015 miniOrange. All rights reserved.</copyright>
     <creationDate>Dec 2019</creationDate>
-    <version>6.4.2</version>
+    <version>6.4.3</version>
 	<description>Authentication file for LDAP</description>
 
 	<files>
