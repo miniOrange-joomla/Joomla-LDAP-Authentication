@@ -1,11 +1,23 @@
 .mo_main_ldap_section {
     background-color: #ffffff;
-    padding: var(--spacing-lg, 2rem) var(--spacing-xl, 9.375rem) !important;
+    padding: var(--spacing-lg, 2rem) clamp(1rem, 5vw, 9.375rem) !important;
 }
 .mo_ldap_mini_section{
     background-color: #F3F7FC;
     padding: 2em !important;
     margin: 0.5rem;
+}
+
+/* Accordion-style mini sections (those that contain a collapse toggle) */
+.mo_ldap_mini_section.mo_boot_row {
+    padding: 1rem 1.5rem !important;
+}
+
+.mo_ldap_mini_section.mo_boot_row [data-bs-toggle="collapse"] h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0;
+    line-height: 1.4;
 }
 
 .mo_ldap_mini_section .mo_boot_btn {
@@ -47,6 +59,14 @@
 	border: 1px solid #000000;
 }
 
+.tab-content.mo_ldap_tab-content > .tab-pane {
+	display: none !important;
+}
+.tab-content.mo_ldap_tab-content > .tab-pane.active,
+.tab-content.mo_ldap_tab-content > .tab-pane.active.show {
+	display: block !important;
+}
+
 .mo_ldap_heading{
 	font-size:20px;
 	color:var(--body-color);
@@ -56,7 +76,8 @@
 	display:block;
 	background-color:var(--body-color);
 	content:" ";
-	width:325px;
+	max-width:325px;
+	width:100%;
 	margin-top:11px
 }
 .mo_ldap_sub_heading{
@@ -66,7 +87,8 @@
 	height:2px;
 	display:block;
 	background-color:var(--body-color);
-	width:219px;
+	max-width:219px;
+	width:100%;
 	margin-top:11px
 }
 .mo_ldap_details_tag{
@@ -434,6 +456,26 @@ select.mo-form-control[size], select.mo-form-control[multiple] {
     cursor: not-allowed !important;
 }
 
+.mo_ldap_disabled_toggle_wrap .form-check-input,
+.mo_ldap_disabled_toggle_wrap .form-check-input:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+}
+
+.mo_ldap_disabled_toggle_wrap label,
+.mo_ldap_disabled_toggle_wrap .form-check-label {
+    opacity: 1 !important;
+    cursor: default !important;
+}
+
+.mo_ldap_feature_chevron {
+    transition: transform 0.2s ease;
+}
+
+button[aria-expanded="true"] .mo_ldap_feature_chevron {
+    transform: rotate(180deg);
+}
+
 .mo-form-control-select {
 height: calc(2.25rem + 2px);
 }
@@ -570,7 +612,7 @@ input.form-control:disabled, input.form-control:read-only{
     margin: 5% auto;
     padding: 0;
     border: 1px solid #ddd;
-    width: 500px;
+    width: min(500px, 90vw);
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     animation: modalSlideIn 0.3s ease-out;
@@ -728,6 +770,23 @@ a::before
     border: 2px solid #FFFFFF;
 }
 
+.form-style-6 {
+    font: 95% Arial, Helvetica, sans-serif;
+    max-width: 400px;
+    margin: 10px auto;
+    padding: 16px;
+    background: #F7F7F7;
+}
+
+.form-style-6 h1 {
+    background: #001b4c;
+    padding: 20px 0;
+    font-size: 140%;
+    font-weight: 300;
+    text-align: center;
+    color: #fff;
+}
+
 /* Dark Theme Support */
 :root[data-color-scheme=dark]
 {
@@ -862,9 +921,31 @@ a::before
         height: 30px !important;
         border-radius: 50% !important;
     }
-
 }
 
+@media(max-width: 1024px){
+    .mo_ldap_navbar {
+        flex-wrap: wrap;
+    }
+
+    .mo_ldap_nav-tab {
+        padding: 10px 8px;
+        font-size: 13px;
+        flex: 1 1 auto;
+        min-width: 0;
+        text-align: center;
+    }
+
+    .mo_ldap_nav-tab .tab-label {
+        font-size: 12px;
+    }
+
+    .mo_main_ldap_section .mo_boot_col-xl-7,
+    .mo_main_ldap_section .mo_boot_col-xl-5 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
 
 @media(max-width: 768px){
 
@@ -889,4 +970,57 @@ a::before
         transition: transform 0.3s ease;
     }
 
+}
+
+/* Yes/No toggle buttons */
+.btn-group-yesno {
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+.btn-group-yesno input[type="radio"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.btn-group-yesno label.mo_boot_btn {
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.btn-group-yesno > label.mo_boot_btn:first-of-type {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.btn-group-yesno > label.mo_boot_btn:last-of-type {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -1px;
+}
+
+.btn-group-yesno input[type="radio"]:not(:checked) + label.mo_boot_btn-danger {
+    color: #dc3545;
+    background-color: transparent;
+    border-color: #dc3545;
+}
+
+.btn-group-yesno input[type="radio"]:not(:checked) + label.mo_boot_btn-success {
+    color: #46a546;
+    background-color: transparent;
+    border-color: #46a546;
+}
+
+.mo_ldap_disabled_toggle_wrap.btn-group-yesno label.mo_boot_btn,
+.mo_ldap_disabled_toggle_wrap .btn-group-yesno label.mo_boot_btn {
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: none;
 }

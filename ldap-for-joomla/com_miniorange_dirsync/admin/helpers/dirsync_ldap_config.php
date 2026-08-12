@@ -1,444 +1,527 @@
 <?php
 /**
-* @package     Joomla.Component
-* @subpackage  com_miniorange_dirsync
-*
-* @author      miniOrange Security Software Pvt. Ltd.
-* @copyright   Copyright (C) 2015 miniOrange (https://www.miniorange.com)
-* @license     GNU General Public License version 3; see LICENSE.txt
-* @contact     info@xecurify.com
-*/
-/*This class contains all the ldap functions*/
-defined( '_JEXEC' ) or die( 'Restricted access' );
+ * @package     Joomla.Component
+ * @subpackage  com_miniorange_dirsync
+ *
+ * @author      miniOrange Security Software Pvt. Ltd.
+ * @copyright   Copyright (C) 2015 miniOrange (https://www.miniorange.com)
+ * @license     GNU General Public License version 3; see LICENSE.txt
+ * @contact     info@xecurify.com
+ */
+// This class contains all the ldap functions
 
-class MoLdapConfig{
+defined('_JEXEC') or die('Restricted access');
 
-	public static function mo_ldap_ping_ldap_server($url,$ldap_bind_dn,$ldap_bind_password,$ignore_ldaps="", $enable_tls=""){
-	
+class MoLdapConfig
+{
 
-		if(!MoLdapUtility::mo_ldap_is_extension_installed('ldap')){
+	public static function moLdapPingLdapServer($url,$ldapBindDn,$ldapBindPassword,$ignoreLdaps="", $enableTls="")
+	{
+
+		if (!MoLdapUtility::moLdapIsExtensionInstalled('ldap'))
+		{
 			return "LDAP_ERROR";
 		}
 
-		$url=MoLdapUtility::mo_ldap_decrypt($url);
-		$ldap_bind_dn=isset($ldap_bind_dn)       ? MoLdapUtility::mo_ldap_decrypt($ldap_bind_dn)       : "";
-		$ldap_bind_password=isset($ldap_bind_password) ? MoLdapUtility::mo_ldap_decrypt($ldap_bind_password) : "";
-		$ldapconn=MoLdapConfig::mo_ldap_get_connection($url, $ignore_ldaps, $enable_tls);
+		$url = MoLdapUtility::moLdapDecrypt($url);
+		$ldapBindDn = isset($ldapBindDn) ? MoLdapUtility::moLdapDecrypt($ldapBindDn) : "";
+		$ldapBindPassword = isset($ldapBindPassword) ? MoLdapUtility::moLdapDecrypt($ldapBindPassword) : "";
+		$ldapconn = self::moLdapGetConnection($url, $ignoreLdaps, $enableTls);
 
-		if ($ldapconn) {
+		if ($ldapconn)
+		{
+			$ldapbind = @ldap_bind($ldapconn, $ldapBindDn, $ldapBindPassword);
+			$err = ldap_error($ldapconn);
 
-			$ldapbind=@ldap_bind($ldapconn,$ldap_bind_dn,$ldap_bind_password);
-			$err=ldap_error($ldapconn);
-		
-			if ($ldapbind) {
+			if ($ldapbind)
+			{
 				return "SUCCESS";
 			}
 		}
+
 		return "ERROR";
 	}
 
 
-    public static function mo_ldap_search_user_attributes($username){
+	public static function moLdapSearchUserAttributes($username)
+	{
 		$username = stripcslashes($username);
 
 		// Check if LDAP extension is installed
-		if(!MoLdapUtility::mo_ldap_is_extension_installed('ldap')) {
-			$auth_response=new Mo_Ldap_Auth_Response();
-			$auth_response->status=false;
-			$auth_response->statusMessage='LDAP_ERROR';
-			$auth_response->userDn='';
-			return $auth_response;	
+		if (!MoLdapUtility::moLdapIsExtensionInstalled('ldap'))
+		{
+			$authResponse = new Mo_Ldap_Auth_Response;
+			$authResponse->status = false;
+			$authResponse->statusMessage = 'LDAP_ERROR';
+			$authResponse->userDn = '';
+
+			return $authResponse;
 		}
 
-		$ldapServer=new MoLdapConstants();
-		$ldapconn=self::mo_ldap_get_connection($ldapServer->getServerURL(), $ldapServer->getIgnoreCertificateState(), $ldapServer->getEnableTls());
+		$ldapServer = new MoLdapConstants;
+		$ldapconn = self::moLdapGetConnection($ldapServer->getServerURL(), $ldapServer->getIgnoreCertificateState(), $ldapServer->getEnableTls());
 
-		if(!$ldapconn){
-			$auth_response = new Mo_Ldap_Auth_Response();
-			$auth_response->status = false;
-			$auth_response->statusMessage = 'LDAP_NOT_RESPONDING';
-			$auth_response->userDn = '';
-			return $auth_response;
+		if (!$ldapconn)
+		{
+			$authResponse = new Mo_Ldap_Auth_Response;
+			$authResponse->status = false;
+			$authResponse->statusMessage = 'LDAP_NOT_RESPONDING';
+			$authResponse->userDn = '';
+
+			return $authResponse;
 		}
 
-		try {
+		try
+		{
 			// Bind to LDAP server
 			$bind = @ldap_bind($ldapconn, $ldapServer->getBindDN(), $ldapServer->getBindDNPassword());
 			$err = ldap_error($ldapconn);
 
-			if(strtolower($err) !== 'success'){
+			if (strtolower($err) !== 'success')
+			{
 				ldap_unbind($ldapconn);
-				$auth_response = new Mo_Ldap_Auth_Response();
-				$auth_response->status = false;
-				$auth_response->statusMessage = 'LDAP_NOT_RESPONDING';
-				$auth_response->userDn = '';
-				return $auth_response;
+				$authResponse = new Mo_Ldap_Auth_Response;
+				$authResponse->status = false;
+				$authResponse->statusMessage = 'LDAP_NOT_RESPONDING';
+				$authResponse->userDn = '';
+
+				return $authResponse;
 			}
 
 			// Build search filter
-			$search_filter = $ldapServer->getSearchFilter();
-			$search_filter = '(&(' . $search_filter . '=' . ldap_escape($username, '', LDAP_ESCAPE_FILTER) . ')(|(objectClass=user)(objectClass=person)))';
-			
+			$searchFilter = $ldapServer->getSearchFilter();
+			$searchFilter = '(&(' . $searchFilter . '=' . ldap_escape($username, '', LDAP_ESCAPE_FILTER) . ')(|(objectClass=user)(objectClass=person)))';
+
 			error_reporting(E_ERROR | E_PARSE);
-			
+
 			// Perform LDAP search
-			$result = @ldap_search($ldapconn, $ldapServer->getSearchBase(), $search_filter, ['*','+']);
+			$result = @ldap_search($ldapconn, $ldapServer->getSearchBase(), $searchFilter, array('*','+'));
 			$error = ldap_error($ldapconn);
-			
-			if($error === "Bad search filter" || $error === "Invalid DN syntax"){
+
+			if ($error === "Bad search filter" || $error === "Invalid DN syntax")
+			{
 				ldap_unbind($ldapconn);
-				$auth_response = new Mo_Ldap_Auth_Response();
-				$auth_response->status = false;
-				$auth_response->statusMessage = 'BAD_SEARCH_FILTER';
-				$auth_response->userDn = '';
-				return $auth_response; 
+				$authResponse = new Mo_Ldap_Auth_Response;
+				$authResponse->status = false;
+				$authResponse->statusMessage = 'BAD_SEARCH_FILTER';
+				$authResponse->userDn = '';
+
+				return $authResponse;
 			}
 
-			if($result === false){
+			if ($result === false)
+			{
 				ldap_unbind($ldapconn);
-				$auth_response = new Mo_Ldap_Auth_Response();
-				$auth_response->status = false;
-				$auth_response->statusMessage = 'USER_NOT_EXIST';
-				$auth_response->userDn = '';
-				return $auth_response;
+				$authResponse = new Mo_Ldap_Auth_Response;
+				$authResponse->status = false;
+				$authResponse->statusMessage = 'USER_NOT_EXIST';
+				$authResponse->userDn = '';
+
+				return $authResponse;
 			}
 
 			$entries = ldap_get_entries($ldapconn, $result);
 
-			if($entries['count'] === 0){
+			if ($entries['count'] === 0)
+			{
 				ldap_unbind($ldapconn);
-				$auth_response = new Mo_Ldap_Auth_Response();
-				$auth_response->status = false;
-				$auth_response->statusMessage = 'USER_NOT_EXIST';
-				$auth_response->userDn = '';
-				return $auth_response;
+				$authResponse = new Mo_Ldap_Auth_Response;
+				$authResponse->status = false;
+				$authResponse->statusMessage = 'USER_NOT_EXIST';
+				$authResponse->userDn = '';
+
+				return $authResponse;
 			}
 
 			// Process user attributes
-			$user_attributes = array();
+			$userAttributes = array();
 			$entry = $entries[0];
-			
-			foreach($entry as $key => $value){
+
+			foreach ($entry as $key => $value)
+			{
 				// Skip numeric keys and 'count' key
-				if(is_numeric($key) || $key === 'count') {
+				if (is_numeric($key) || $key === 'count')
+				{
 					continue;
 				}
 
 				// Handle special attributes
-				if($key === 'thumbnailphoto' && isset($value[0]) && !empty($value[0])){
+				if ($key === 'thumbnailphoto' && isset($value[0]) && !empty($value[0]))
+				{
 					$base64Image = base64_encode($value[0]);
-					$src = 'data:image/jpeg;base64,' . $base64Image;	
-					$user_attributes[$key] = $src;
+					$src = 'data:image/jpeg;base64,' . $base64Image;
+					$userAttributes[$key] = $src;
 				}
 				// Handle AD timestamp attributes
-				elseif(in_array($key, ['lastlogon', 'lastlogontimestamp', 'accountexpires', 'whencreated', 'whenchanged', 'badpasswordtime', 'pwdlastset']) && isset($value[0]) && is_numeric($value[0]) && $value[0] > 0){
+				elseif (in_array($key, array('lastlogon', 'lastlogontimestamp', 'accountexpires', 'whencreated', 'whenchanged', 'badpasswordtime', 'pwdlastset')) && isset($value[0]) && is_numeric($value[0]) && $value[0] > 0)
+				{
 					// Convert Windows timestamp to readable date
-					$user_attributes[$key] = date('D M d, Y @ H:i:s', ($value[0] / 10000000) - 11676009600);
+					$userAttributes[$key] = date('D M d, Y @ H:i:s', ($value[0] / 10000000) - 11676009600);
 				}
 				// Handle multi-value attributes (like memberOf)
-				elseif(isset($value['count']) && $value['count'] > 1){
+				elseif (isset($value['count']) && $value['count'] > 1)
+				{
 					$multiValues = array();
-					for($i = 0; $i < $value['count']; $i++){
-						if(isset($value[$i])){
+
+					for ($i = 0; $i < $value['count']; $i++)
+					{
+						if (isset($value[$i]))
+						{
 							$multiValues[] = $value[$i];
 						}
 					}
-					$user_attributes[$key] = $multiValues;
+
+					$userAttributes[$key] = $multiValues;
 				}
 				// Handle single-value attributes
-				elseif(isset($value[0])){
-					$user_attributes[$key] = !empty($value[0]) ? $value[0] : 'empty';
+				elseif (isset($value[0]))
+				{
+					$userAttributes[$key] = !empty($value[0]) ? $value[0] : 'empty';
 				}
-				else {
-					$user_attributes[$key] = 'not available';
+				else
+				{
+					$userAttributes[$key] = 'not available';
 				}
 			}
 
 			ldap_unbind($ldapconn);
 
-			$auth_response = new Mo_Ldap_Auth_Response();
-			$auth_response->status = true;
-			$auth_response->attributeList = $user_attributes;
-			$auth_response->statusMessage = 'SUCCESS';
-			return $auth_response;
+			$authResponse = new Mo_Ldap_Auth_Response;
+			$authResponse->status = true;
+			$authResponse->attributeList = $userAttributes;
+			$authResponse->statusMessage = 'SUCCESS';
 
-		} catch (Exception $e) {
-			if(isset($ldapconn)) {
+			return $authResponse;
+		}
+		catch (Exception $e)
+		{
+			if (isset($ldapconn))
+			{
 				ldap_unbind($ldapconn);
 			}
-			$auth_response = new Mo_Ldap_Auth_Response();
-			$auth_response->status = false;
-			$auth_response->statusMessage = 'ERROR';
-			$auth_response->userDn = '';
-			return $auth_response;
+
+			$authResponse = new Mo_Ldap_Auth_Response;
+			$authResponse->status = false;
+			$authResponse->statusMessage = 'ERROR';
+			$authResponse->userDn = '';
+
+			return $authResponse;
 		}
 	}
-	
-	
-	public static function mo_ldap_authenticate_user($username, $password){
-		
-		$username=stripcslashes($username);
-		$authStatus=null;
 
-		if(!MoLdapUtility::mo_ldap_is_extension_installed('ldap')) {
-			$auth_response=new Mo_Ldap_Auth_Response();
-			$auth_response->status=false;
-			$auth_response->statusMessage='LDAP_ERROR';
-			$auth_response->userDn='';
-			return $auth_response;
 
+	public static function moLdapAuthenticateUser($username, $password)
+	{
+
+		$username = stripcslashes($username);
+		$authStatus = null;
+
+		if (!MoLdapUtility::moLdapIsExtensionInstalled('ldap'))
+		{
+			$authResponse = new Mo_Ldap_Auth_Response;
+			$authResponse->status = false;
+			$authResponse->statusMessage = 'LDAP_ERROR';
+			$authResponse->userDn = '';
+
+			return $authResponse;
 		}
-				
-		$ldapServer=new MoLdapConstants();
-		$ldapconn=self::mo_ldap_get_connection($ldapServer->getServerURL(), $ldapServer->getIgnoreCertificateState(), $ldapServer->getEnableTls());
-		
-		if($ldapconn){
 
-			$search_filter=$ldapServer->getSearchFilter();
-			$search_filter = '(&(' . $search_filter . '=?)(|(objectClass=user)(objectClass=person)))';
-			$filter=str_replace('?', $username, $search_filter);
-			$user_search_result=null;
-			$entry=null;
-			$info=null;
-			
+		$ldapServer = new MoLdapConstants;
+		$ldapconn = self::moLdapGetConnection($ldapServer->getServerURL(), $ldapServer->getIgnoreCertificateState(), $ldapServer->getEnableTls());
+
+		if ($ldapconn)
+		{
+			$searchFilter = $ldapServer->getSearchFilter();
+			$searchFilter = '(&(' . $searchFilter . '=?)(|(objectClass=user)(objectClass=person)))';
+			$filter = str_replace('?', $username, $searchFilter);
+			$userSearchResult = null;
+			$entry = null;
+			$info = null;
+
 			error_reporting(E_ERROR | E_PARSE);
-			$bind=@ldap_bind($ldapconn, $ldapServer->getBindDN(), $ldapServer->getBindDNPassword());
-			$err=ldap_error($ldapconn);
+			$bind = @ldap_bind($ldapconn, $ldapServer->getBindDN(), $ldapServer->getBindDNPassword());
+			$err = ldap_error($ldapconn);
 
-			//if the bind to the server is not complete
-			if(strtolower($err) !='success'){
-				$auth_response=new Mo_Ldap_Auth_Response();
-				$auth_response->status=false;
-				$auth_response->statusMessage='LDAP_NOT_RESPONDING';
-				$auth_response->userDn='';
-				return $auth_response;
+			// If the bind to the server is not complete
+			if (strtolower($err) != 'success')
+			{
+				$authResponse = new Mo_Ldap_Auth_Response;
+				$authResponse->status = false;
+				$authResponse->statusMessage = 'LDAP_NOT_RESPONDING';
+				$authResponse->userDn = '';
+
+				return $authResponse;
 			}
-			
-			if(ldap_search($ldapconn,  $ldapServer->getSearchBase(), $filter))
-				$user_search_result=ldap_search($ldapconn,  $ldapServer->getSearchBase(), $filter, ['*','+']);
-			else{ 
-				$auth_response=new Mo_Ldap_Auth_Response();
-				$auth_response->status=false;
-				$auth_response->statusMessage='USER_NOT_EXIST';
-				$auth_response->userDn='';
-				return $auth_response;
+
+			if (ldap_search($ldapconn,  $ldapServer->getSearchBase(), $filter))
+			{
+				$userSearchResult = ldap_search($ldapconn,  $ldapServer->getSearchBase(), $filter, array('*','+'));
 			}
-			$info=ldap_first_entry($ldapconn, $user_search_result);
-			$entry=ldap_get_entries($ldapconn, $user_search_result);
-			
-			if($info){
-				
-				$user_auth=@ldap_bind($ldapconn, $entry[0]['dn'],$password);	
-				if($user_auth){
-				$userDn=ldap_get_dn($ldapconn, $info);
-				$auth_response=new Mo_Ldap_Auth_Response();
-				$auth_response->status=true;
-				$auth_response->statusMessage='SUCCESS';
-				$auth_response->userDn=$userDn;
-				return $auth_response;
-				}else{ 
-					
-				$auth_response=new Mo_Ldap_Auth_Response();
-				$auth_response->status=false;
-				$auth_response->statusMessage='USER_PASSWORD_DOESNTMATCH';
-				$auth_response->userDn='';
-				return $auth_response;
+			else
+			{
+				$authResponse = new Mo_Ldap_Auth_Response;
+				$authResponse->status = false;
+				$authResponse->statusMessage = 'USER_NOT_EXIST';
+				$authResponse->userDn = '';
+
+				return $authResponse;
+			}
+
+			$info = ldap_first_entry($ldapconn, $userSearchResult);
+			$entry = ldap_get_entries($ldapconn, $userSearchResult);
+
+			if ($info)
+			{
+				$userAuth = @ldap_bind($ldapconn, $entry[0]['dn'], $password);
+
+				if ($userAuth)
+				{
+					$userDn = ldap_get_dn($ldapconn, $info);
+					$authResponse = new Mo_Ldap_Auth_Response;
+					$authResponse->status = true;
+					$authResponse->statusMessage = 'SUCCESS';
+					$authResponse->userDn = $userDn;
+
+					return $authResponse;
 				}
-				
-				
-			} else{ 
-				$auth_response=new Mo_Ldap_Auth_Response();
-				$auth_response->status=false;
-				$auth_response->statusMessage='USER_NOT_EXIST';
-				$auth_response->userDn='';
-				return $auth_response;
-			}
+				else
+				{
+					$authResponse = new Mo_Ldap_Auth_Response;
+					$authResponse->status = false;
+					$authResponse->statusMessage = 'USER_PASSWORD_DOESNTMATCH';
+					$authResponse->userDn = '';
 
-		}else{ 
-			$auth_response=new Mo_Ldap_Auth_Response();
-			$auth_response->status=false;
-			$auth_response->statusMessage='ERROR';
-			$auth_response->userDn='';
-			return $auth_response;
+					return $authResponse;
+				}
+			}
+			else
+			{
+				$authResponse = new Mo_Ldap_Auth_Response;
+				$authResponse->status = false;
+				$authResponse->statusMessage = 'USER_NOT_EXIST';
+				$authResponse->userDn = '';
+
+				return $authResponse;
+			}
+		}
+		else
+		{
+			$authResponse = new Mo_Ldap_Auth_Response;
+			$authResponse->status = false;
+			$authResponse->statusMessage = 'ERROR';
+			$authResponse->userDn = '';
+
+			return $authResponse;
 		}
 	}
-	
-	public static function mo_ldap_get_base_dn($url,$ldap_bind_dn,$ldap_bind_password,$ignore_ldaps="", $enable_tls=""){
 
-		if(!MoLdapUtility::mo_ldap_is_extension_installed('ldap')){
+	public static function moLdapGetBaseDn($url,$ldapBindDn,$ldapBindPassword,$ignoreLdaps="", $enableTls="")
+	{
+
+		if (!MoLdapUtility::moLdapIsExtensionInstalled('ldap'))
+		{
 			return "LDAP_ERROR";
 		}
 
-		$url=MoLdapUtility::mo_ldap_decrypt($url);
-		$ldap_bind_dn=isset($ldap_bind_dn)       ? MoLdapUtility::mo_ldap_decrypt($ldap_bind_dn)       : "";
-		$ldap_bind_password=isset($ldap_bind_password) ? MoLdapUtility::mo_ldap_decrypt($ldap_bind_password) : "";
-		$ldapconn=MoLdapConfig::mo_ldap_get_connection($url, $ignore_ldaps, $enable_tls);
+		$url = MoLdapUtility::moLdapDecrypt($url);
+		$ldapBindDn = isset($ldapBindDn) ? MoLdapUtility::moLdapDecrypt($ldapBindDn) : "";
+		$ldapBindPassword = isset($ldapBindPassword) ? MoLdapUtility::moLdapDecrypt($ldapBindPassword) : "";
+		$ldapconn = self::moLdapGetConnection($url, $ignoreLdaps, $enableTls);
 
-		if ($ldapconn) {
+		if ($ldapconn)
+		{
+			$ldapbind = @ldap_bind($ldapconn, $ldapBindDn, $ldapBindPassword);
 
-			$ldapbind=@ldap_bind($ldapconn,$ldap_bind_dn,$ldap_bind_password);
-			
-			if($ldapbind){
-					
+			if ($ldapbind)
+			{
 				error_reporting(E_ERROR | E_PARSE);
-				$results=ldap_read($ldapconn, '', '(objectclass=*)', array('namingContexts'));
-				$ldapEnteriesData=ldap_get_entries($ldapconn, $results);
-		
-				$basedn=$ldapEnteriesData[0]['namingcontexts'][0];	
-				
-				$err=ldap_error($ldapconn);
-		
-				if ($ldapbind) {
+				$results = ldap_read($ldapconn, '', '(objectclass=*)', array('namingContexts'));
+				$ldapEnteriesData = ldap_get_entries($ldapconn, $results);
+
+				$basedn = $ldapEnteriesData[0]['namingcontexts'][0];
+
+				$err = ldap_error($ldapconn);
+
+				if ($ldapbind)
+				{
 					return $basedn;
 				}
-		}
-		return "ERROR";
-	}
-
-	}
-	public static function mo_ldap_psbsearchbases(){
-		if(!MoLdapUtility::mo_ldap_is_extension_installed('ldap')){
-			return "LDAP_ERROR";
-		}
-	
-		$ldapServer=new MoLdapConstants();
-
-		$ldapconn=self::mo_ldap_get_connection($ldapServer->getServerURL(),$ldapServer->getIgnoreCertificateState(), $ldapServer->getEnableTls());
-		$searchBaseList=array();
-		
-		if(!empty($ldapServer->getBindDNPassword()) && !empty($ldapServer->getBindDN())){
-
-			$bind=@ldap_bind($ldapconn, $ldapServer->getBindDN(), $ldapServer->getBindDNPassword());
-		
-			if($bind){
-					
-				error_reporting(E_ERROR | E_PARSE);
-				$results=ldap_read($ldapconn, '', '(objectclass=*)', array('namingContexts'));
-				$ldapEnteriesData=ldap_get_entries($ldapconn, $results);
-		
-				$basedn=$ldapEnteriesData[0]['namingcontexts'][0];
-				$basedn_list=$ldapEnteriesData[0]['namingcontexts']['count'];
-				for ($i=0; $i < $basedn_list; $i++) {						
-					array_push($searchBaseList, $ldapEnteriesData[0]['namingcontexts'][$i]);					
-				}
-				$ous=array("ou");
-				$organizational_unit_list=ldap_search($ldapconn, $basedn, "ou=*", $ous);
-				
-				if($organizational_unit_list){
-					$ous_list=ldap_get_entries($ldapconn, $organizational_unit_list);
-					for ($i=0; $i < $ous_list["count"]; $i++) {
-						array_push($searchBaseList,  $ous_list[$i]['dn']);
-					}
-				}	
 			}
-		}					
-		return $searchBaseList;	
+
+			return "ERROR";
+		}
+
 	}
-
-	public static function mo_ldap_get_connection($serverUrl, $ignoreLdaps="", $tls_connection=""){
-
-		if(!MoLdapUtility::mo_ldap_is_extension_installed('ldap')){
+	public static function moLdapPsbSearchBases()
+	{
+		if (!MoLdapUtility::moLdapIsExtensionInstalled('ldap'))
+		{
 			return "LDAP_ERROR";
 		}
 
-		$ldapconn=ldap_connect($serverUrl);
-        if(!$ldapconn){
-            return false;
-        }
-		if ( version_compare(PHP_VERSION, '5.3.0') >=0 ) {
+		$ldapServer = new MoLdapConstants;
+
+		$ldapconn = self::moLdapGetConnection($ldapServer->getServerURL(), $ldapServer->getIgnoreCertificateState(), $ldapServer->getEnableTls());
+		$searchBaseList = array();
+
+		if (!empty($ldapServer->getBindDNPassword()) && !empty($ldapServer->getBindDN()))
+		{
+			$bind = @ldap_bind($ldapconn, $ldapServer->getBindDN(), $ldapServer->getBindDNPassword());
+
+			if ($bind)
+			{
+				error_reporting(E_ERROR | E_PARSE);
+				$results = ldap_read($ldapconn, '', '(objectclass=*)', array('namingContexts'));
+				$ldapEnteriesData = ldap_get_entries($ldapconn, $results);
+
+				$basedn = $ldapEnteriesData[0]['namingcontexts'][0];
+				$basednList = $ldapEnteriesData[0]['namingcontexts']['count'];
+
+				for ($i = 0; $i < $basednList; $i++)
+				{
+					array_push($searchBaseList, $ldapEnteriesData[0]['namingcontexts'][$i]);
+				}
+
+				$ous = array("ou");
+				$organizationalUnitList = ldap_search($ldapconn, $basedn, "ou=*", $ous);
+
+				if ($organizationalUnitList)
+				{
+					$ousList = ldap_get_entries($ldapconn, $organizationalUnitList);
+
+					for ($i = 0; $i < $ousList["count"]; $i++)
+					{
+						array_push($searchBaseList,  $ousList[$i]['dn']);
+					}
+				}
+			}
+		}
+
+		return $searchBaseList;
+	}
+
+	public static function moLdapGetConnection($serverUrl, $ignoreLdaps="", $tlsConnection="")
+	{
+
+		if (!MoLdapUtility::moLdapIsExtensionInstalled('ldap'))
+		{
+			return "LDAP_ERROR";
+		}
+
+		$ldapconn = ldap_connect($serverUrl);
+
+		if (!$ldapconn)
+		{
+			return false;
+		}
+
+		if (version_compare(PHP_VERSION, '5.3.0') >= 0)
+		{
 			ldap_set_option($ldapconn, LDAP_OPT_NETWORK_TIMEOUT, 5);
 		}
 
 		ldap_set_option($ldapconn, LDAP_OPT_PROTOCOL_VERSION, 3);
 		ldap_set_option($ldapconn, LDAP_OPT_REFERRALS, 0);
-		ldap_set_option(NULL, LDAP_OPT_DEBUG_LEVEL, 7);
-		
-		if($ignoreLdaps=="ch"){
-			ldap_set_option(NULL, LDAP_OPT_X_TLS_REQUIRE_CERT, 0);
+		ldap_set_option(null, LDAP_OPT_DEBUG_LEVEL, 7);
+
+		if ($ignoreLdaps == "ch")
+		{
+			ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, 0);
 		}
 
-		if($tls_connection=='ch'){
+		if ($tlsConnection == 'ch')
+		{
 			ldap_start_tls($ldapconn);
 		}
+
 		return $ldapconn;
 	}
 
-	public static function mo_ldap_get_user_details($username){
-		
-		if(!MoLdapUtility::mo_ldap_is_extension_installed('ldap')) {
-			$auth_response=new Mo_Ldap_Auth_Response();
-			$auth_response->status=false;
-			$auth_response->statusMessage='LDAP_ERROR';
-			$auth_response->userDn='';
-			return $auth_response;	
+	public static function moLdapGetUserDetails($username)
+	{
+
+		if (!MoLdapUtility::moLdapIsExtensionInstalled('ldap'))
+		{
+			$authResponse = new Mo_Ldap_Auth_Response;
+			$authResponse->status = false;
+			$authResponse->statusMessage = 'LDAP_ERROR';
+			$authResponse->userDn = '';
+
+			return $authResponse;
 		}
-		
-		$ldapServer=new MoLdapConstants();
-		$ldapconn=self::mo_ldap_get_connection($ldapServer->getServerURL(), $ldapServer->getIgnoreCertificateState(), $ldapServer->getEnableTls());
-		
-		if($ldapconn){
 
-			$search_filter=$ldapServer->getSearchFilter();
-			$search_filter='(&(objectClass=*)('.$search_filter.'=?))';
-			$filter=str_replace('?', $username, $search_filter);
-			$user_search_result=null;
-			$entry=null;
-			$info=null;
+		$ldapServer = new MoLdapConstants;
+		$ldapconn = self::moLdapGetConnection($ldapServer->getServerURL(), $ldapServer->getIgnoreCertificateState(), $ldapServer->getEnableTls());
 
-			$bind=@ldap_bind($ldapconn, $ldapServer->getBindDN(), $ldapServer->getBindDNPassword());
-			$err=ldap_error($ldapconn);
+		if ($ldapconn)
+		{
+			$searchFilter = $ldapServer->getSearchFilter();
+			$searchFilter = '(&(objectClass=*)(' . $searchFilter . '=?))';
+			$filter = str_replace('?', $username, $searchFilter);
+			$userSearchResult = null;
+			$entry = null;
+			$info = null;
 
-			if(strtolower($err) !='success'){
-				$auth_response=new Mo_Ldap_Auth_Response();
-				$auth_response->status=false;
-				$auth_response->statusMessage='LDAP_NOT_RESPONDING';
-				$auth_response->userDn='';
-				return $auth_response;
+			$bind = @ldap_bind($ldapconn, $ldapServer->getBindDN(), $ldapServer->getBindDNPassword());
+			$err = ldap_error($ldapconn);
+
+			if (strtolower($err) != 'success')
+			{
+				$authResponse = new Mo_Ldap_Auth_Response;
+				$authResponse->status = false;
+				$authResponse->statusMessage = 'LDAP_NOT_RESPONDING';
+				$authResponse->userDn = '';
+
+				return $authResponse;
 			}
-				
+
 			error_reporting(E_ERROR | E_PARSE);
 			@ldap_search($ldapconn, $ldapServer->getSearchBase(), $filter);
-				$error=ldap_error($ldapconn);
-				if($error=="Bad search filter")
-				{
-					$auth_response=new Mo_Ldap_Auth_Response();
-				$auth_response->status=false;
-				$auth_response->statusMessage='BAD_SEARCH_FILTER';
-				$auth_response->userDn='';
-				return $auth_response; 
-				}
+				$error = ldap_error($ldapconn);
 
-			
-			if(ldap_search($ldapconn, $ldapServer->getSearchBase(), $filter)){
-				$user_search_result=ldap_search($ldapconn, $ldapServer->getSearchBase(), $filter,['*','+']);
-				
+			if ($error == "Bad search filter")
+			{
+				$authResponse = new Mo_Ldap_Auth_Response;
+				$authResponse->status = false;
+				$authResponse->statusMessage = 'BAD_SEARCH_FILTER';
+				$authResponse->userDn = '';
+
+				return $authResponse;
 			}
-			else{
-				$auth_response=new Mo_Ldap_Auth_Response();
-				$auth_response->status=false;
-				$auth_response->statusMessage='USER_NOT_EXIST';
-				$auth_response->userDn='';
-				return $auth_response;
+
+			if (ldap_search($ldapconn, $ldapServer->getSearchBase(), $filter))
+			{
+				$userSearchResult = ldap_search($ldapconn, $ldapServer->getSearchBase(), $filter, array('*','+'));
 			}
-			
-			$info=ldap_first_entry($ldapconn, $user_search_result);
-			$entry=ldap_get_entries($ldapconn, $user_search_result);
-		
-				if(!$info){
+			else
+			{
+				$authResponse = new Mo_Ldap_Auth_Response;
+				$authResponse->status = false;
+				$authResponse->statusMessage = 'USER_NOT_EXIST';
+				$authResponse->userDn = '';
+
+				return $authResponse;
+			}
+
+			$info = ldap_first_entry($ldapconn, $userSearchResult);
+			$entry = ldap_get_entries($ldapconn, $userSearchResult);
+
+			if (!$info)
+			{
 				return $info;
-				}
+			}
+
 			return $entry;
-	
-			
-		}else{
-			
-			$auth_response=new Mo_Ldap_Auth_Response();
-			$auth_response->status=false;
-			$auth_response->statusMessage='ERROR';
-			$auth_response->userDn='';
-			return $auth_response;
-			
-		}	
+		}
+		else
+		{
+			$authResponse = new Mo_Ldap_Auth_Response;
+			$authResponse->status = false;
+			$authResponse->statusMessage = 'ERROR';
+			$authResponse->userDn = '';
+
+			return $authResponse;
+		}
 	}
 }
-?>
+

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="component" version="5.1.4" method="upgrade">
 	<name>COM_MINIORANGE_DIRSYNC</name>
-    <version>6.4.3</version>
+    <version>6.4.7</version>
     <author>miniOrange Security Software Pvt. Ltd.</author>
     <creationDate>Dec 2019</creationDate>
     <authorEmail>info@xecurify.com</authorEmail>

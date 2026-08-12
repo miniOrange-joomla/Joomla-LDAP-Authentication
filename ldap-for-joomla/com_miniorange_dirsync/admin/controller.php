@@ -9,7 +9,7 @@ defined('_JEXEC') or die;
 * @license     GNU General Public License version 3; see LICENSE.txt
 * @contact     info@xecurify.com
 */
- 
+
 // No direct access to this file
 defined('_JEXEC') or die('Restricted access');
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -21,5 +21,19 @@ class MiniorangeDirSyncController extends BaseController
 	 * @var string
 	 * @since 12.2
 	 */
-	protected $default_view='accountsetup';
+	protected $defaultView = 'accountsetup';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param   array  $config  An optional associative array of configuration settings.
+	 */
+	public function __construct($config = array())
+	{
+		parent::__construct($config);
+
+		// Assign the default view using the core BaseController property name.
+		$defaultViewProperty = 'default_view';
+		$this->$defaultViewProperty = $this->defaultView;
+	}
 }

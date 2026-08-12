@@ -22,14 +22,112 @@ function mo_ldap_attribute_mapping_details()
  	}
 }
 
-function mo_ldap_add_css_tab(element) {
-	jQuery(".mo_nav_tab_active ").removeClass("mo_nav_tab_active").removeClass("active");
-	jQuery(element).addClass("mo_nav_tab_active");
-	
-	// Check if the logger tab is being activated
-	if (element === "#loggers" || jQuery(element).attr('href') === "#loggers") {
-		mo_ldap_refresh_logger_tab();
+function mo_ldap_get_tab_panel_id(tabKey) {
+	var tabPanelMap = { moLoggers: 'loggers', loggers: 'loggers' };
+	return tabPanelMap[tabKey] || tabKey;
+}
+
+function mo_ldap_activate_tab(tabKey, navElement) {
+	var paneId = mo_ldap_get_tab_panel_id(tabKey);
+	var pane = document.getElementById(paneId);
+
+	if (!pane) {
+		window.location.href = 'index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=' + encodeURIComponent(tabKey);
+		return;
 	}
+
+	document.querySelectorAll('.mo_ldap_tab-content > .tab-pane').forEach(function(tabPane) {
+		tabPane.classList.remove('active', 'show');
+	});
+	pane.classList.add('active', 'show');
+
+	document.querySelectorAll('.mo_ldap_nav-tab').forEach(function(tabLink) {
+		tabLink.classList.remove('mo_nav_tab_active', 'active');
+	});
+
+	if (navElement) {
+		navElement.classList.add('mo_nav_tab_active');
+	} else {
+		var fallbackNav = document.querySelector('.mo_ldap_nav-tab[data-tab-key="' + tabKey + '"]');
+		if (fallbackNav) {
+			fallbackNav.classList.add('mo_nav_tab_active');
+		}
+	}
+
+	if (window.history && window.history.replaceState) {
+		var url = new URL(window.location.href);
+		url.searchParams.set('tab-panel', tabKey);
+		url.hash = '';
+		window.history.replaceState({}, '', url.toString());
+	}
+}
+
+function mo_ldap_add_css_tab(element) {
+	document.querySelectorAll('.mo_ldap_nav-tab.mo_nav_tab_active').forEach(function(tabLink) {
+		tabLink.classList.remove('mo_nav_tab_active', 'active');
+	});
+
+	var navElement = typeof element === 'string' ? document.querySelector(element) : element;
+
+	if (navElement) {
+		navElement.classList.add('mo_nav_tab_active');
+	}
+
+	var tabKey = navElement ? navElement.getAttribute('data-tab-key') : null;
+
+	if (tabKey) {
+		mo_ldap_activate_tab(tabKey, navElement);
+	}
+}
+
+function mo_ldap_sync_tab_from_url() {
+	var url = new URL(window.location.href);
+	var tabKey = url.searchParams.get('tab-panel');
+
+	if (!tabKey) {
+		return;
+	}
+
+	var navElement = document.querySelector('.mo_ldap_nav-tab[data-tab-key="' + tabKey + '"]');
+	mo_ldap_activate_tab(tabKey, navElement);
+}
+
+function mo_ldap_init_tabs() {
+	document.querySelectorAll('.mo_ldap_navbar').forEach(function(navbar) {
+		if (navbar.getAttribute('data-mo-ldap-tabs-bound') === '1') {
+			return;
+		}
+
+		navbar.setAttribute('data-mo-ldap-tabs-bound', '1');
+		navbar.addEventListener('click', function(e) {
+			if (e.target.closest('.crown_img_small')) {
+				return;
+			}
+
+			var tabLink = e.target.closest('.mo_ldap_nav-tab');
+
+			if (!tabLink) {
+				return;
+			}
+
+			var tabKey = tabLink.getAttribute('data-tab-key');
+
+			if (!tabKey) {
+				return;
+			}
+
+			e.preventDefault();
+			mo_ldap_activate_tab(tabKey, tabLink);
+		});
+	});
+
+	mo_ldap_sync_tab_from_url();
+}
+
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', mo_ldap_init_tabs);
+} else {
+	mo_ldap_init_tabs();
 }
 
 function mo_ldap_account_exist(){
@@ -173,8 +271,9 @@ function createBaseDiv(base, index) {
 function updateSearchBaseLimit() {
     let allBases = document.getElementById('search_base_list_id').value;
     allBases = JSON.parse(allBases);
-    const limit = document.getElementById('limit').value;
+    const limit = parseInt(document.getElementById('limit').value, 10);
     const searchBaseResults = document.getElementById('search_base_results');
+    const paginationDiv = document.querySelector('.mo_boot_pagination');
 
     searchBaseResults.innerHTML = '';
 
@@ -183,6 +282,10 @@ function updateSearchBaseLimit() {
         fragment.appendChild(createBaseDiv(base, i));
     });
     searchBaseResults.appendChild(fragment);
+
+    if (paginationDiv) {
+        paginationDiv.style.display = limit >= allBases.length ? 'none' : '';
+    }
 }
 
 function filterSearchBases() {
@@ -226,18 +329,29 @@ function updateLoggerLimit() {
 
     if (logsToShow.length > 0) {
         logsToShow.forEach(log => {
-            const logData = typeof log.message === 'string' ? JSON.parse(log.message) : log.message;
+            let logData = {};
+
+            try {
+                logData = typeof log.message === 'string' ? JSON.parse(log.message) : log.message;
+            } catch (e) {
+                logData = { code: '-', issue: log.message };
+            }
+
+            if (!logData || typeof logData !== 'object') {
+                logData = { code: '-', issue: log.message };
+            }
+
             const logCode = logData.code || '-';
             const logIssue = logData.issue || '-';
             const logLevel = log.log_level.toLowerCase();
             const badgeClass = logLevel === 'info' ? 'badge bg-success' :
-                logLevel === 'warn' ? 'badge bg-warning text-dark' :
-                    (logLevel === 'err' || logLevel === 'error') ? 'badge bg-danger' :
+                (logLevel === 'warn' || logLevel === 'warning') ? 'badge bg-warning text-dark' :
+                    (logLevel === 'err' || logLevel === 'error' || logLevel === 'critical' || logLevel === 'alert') ? 'badge bg-danger' :
                         'badge bg-secondary';
 
             const iconClass = logLevel === 'info' ? 'fas fa-info-circle text-success' :
-                logLevel === 'warn' ? 'fas fa-exclamation-triangle text-warning' :
-                    (logLevel === 'err' || logLevel === 'error') ? 'fas fa-times-circle text-danger' :
+                (logLevel === 'warn' || logLevel === 'warning') ? 'fas fa-exclamation-triangle text-warning' :
+                    (logLevel === 'err' || logLevel === 'error' || logLevel === 'critical' || logLevel === 'alert') ? 'fas fa-times-circle text-danger' :
                         'fas fa-circle text-secondary';
 
             const timestamp = new Date(log.timestamp);
@@ -307,8 +421,18 @@ function filterLoggerEntries() {
 
     // Filter logs based on search term
     const filteredLogs = allLogs.filter(log => {
-        // Parse log message (it is JSON)
-        const logData = typeof log.message === 'string' ? JSON.parse(log.message) : log.message;
+        let logData = {};
+
+        try {
+            logData = typeof log.message === 'string' ? JSON.parse(log.message) : log.message;
+        } catch (e) {
+            logData = { code: '-', issue: log.message };
+        }
+
+        if (!logData || typeof logData !== 'object') {
+            logData = { code: '-', issue: log.message };
+        }
+
         const logMessage = (logData.issue || '').toLowerCase();
         const logCode = (logData.code || '').toLowerCase();
         const logLevel = log.log_level.toLowerCase();
@@ -325,18 +449,29 @@ function filterLoggerEntries() {
     // Populate filtered logs
     if (filteredLogs.length > 0) {
         filteredLogs.forEach(log => {
-            const logData = typeof log.message === 'string' ? JSON.parse(log.message) : log.message;
+            let logData = {};
+
+            try {
+                logData = typeof log.message === 'string' ? JSON.parse(log.message) : log.message;
+            } catch (e) {
+                logData = { code: '-', issue: log.message };
+            }
+
+            if (!logData || typeof logData !== 'object') {
+                logData = { code: '-', issue: log.message };
+            }
+
             const logCode = logData.code || '-';
             const logIssue = logData.issue || '-';
             const logLevel = log.log_level.toLowerCase();
             const badgeClass = logLevel === 'info' ? 'badge bg-success' :
-                logLevel === 'warn' ? 'badge bg-warning text-dark' :
-                    (logLevel === 'err' || logLevel === 'error') ? 'badge bg-danger' :
+                (logLevel === 'warn' || logLevel === 'warning') ? 'badge bg-warning text-dark' :
+                    (logLevel === 'err' || logLevel === 'error' || logLevel === 'critical' || logLevel === 'alert') ? 'badge bg-danger' :
                         'badge bg-secondary';
             
             const iconClass = logLevel === 'info' ? 'fas fa-info-circle text-success' :
-                logLevel === 'warn' ? 'fas fa-exclamation-triangle text-warning' :
-                    (logLevel === 'err' || logLevel === 'error') ? 'fas fa-times-circle text-danger' :
+                (logLevel === 'warn' || logLevel === 'warning') ? 'fas fa-exclamation-triangle text-warning' :
+                    (logLevel === 'err' || logLevel === 'error' || logLevel === 'critical' || logLevel === 'alert') ? 'fas fa-times-circle text-danger' :
                         'fas fa-circle text-secondary';
 
             const timestamp = new Date(log.timestamp);
@@ -431,14 +566,31 @@ document.addEventListener('DOMContentLoaded',function(){
 						body.style.display = body.style.display === 'none' || body.style.display =="" ? 'block' : 'none';
 					});
 				});
+
+	if (document.getElementById('search_base_list_id') && document.getElementById('limit')) {
+		const allBases = JSON.parse(document.getElementById('search_base_list_id').value);
+		const limit = parseInt(document.getElementById('limit').value, 10);
+		const paginationDiv = document.querySelector('.mo_boot_pagination');
+
+		if (paginationDiv && limit >= allBases.length) {
+			paginationDiv.style.display = 'none';
+		}
+	}
 		});
 
 jQuery(document).change(function(){
+	var ldapTypeEl = document.getElementById("mo_ldap_type");
+	var portEl = document.getElementById('mo_ldap_port');
 
-	var ldapType = document.getElementById("mo_ldap_type").value;
-	if(ldapType == 'ldaps')
-		document.getElementById('mo_ldap_port').value = '636';
+	if (!ldapTypeEl || !portEl) {
+		return;
+	}
 
+	if (ldapTypeEl.value === 'ldaps') {
+		portEl.value = '636';
+	} else if (ldapTypeEl.value === 'ldap') {
+		portEl.value = '389';
+	}
 });
 
 function mo_ldap_possible_search_bases(){
@@ -488,6 +640,25 @@ function checkLdapAttributes() {
     }, 1);
 }
 
+function checkLdapAttributesMapping() {
+    var username = document.getElementById('mapping_test_username').value;
+    var password = document.getElementById('mapping_test_password').value;
+
+    if (!username || !password) {
+        alert(Joomla.JText._('Password Required'));
+        return false;
+    }
+
+    var testconfigurl = 'index.php?option=com_miniorange_dirsync&view=accountsetup&task=accountsetup.moLdapTestAttributeMapping&test_attribute_username=' + encodeURIComponent(username) + '&test_attribute_password=' + encodeURIComponent(password);
+    var myWindow = window.open(testconfigurl, 'TEST LDAP ATTRIBUTE MAPPING', 'scrollbars=1 width=800, height=800');
+    var timer = setInterval(function() {
+        if (myWindow.closed) {
+            clearInterval(timer);
+            location.reload();
+        }
+    }, 1);
+}
+
 function updateFileName(input) {
     const fileStatus = document.getElementById('file_status');
     const importBtn = document.getElementById('import_btn');
@@ -524,21 +695,12 @@ function showLogModal(level, date, message, file, functionName, line) {
 
 
 document.addEventListener("DOMContentLoaded", function () {
-    // Initialize logger functionality if the page contains logger elements
-    const loggerToggle = document.getElementById("mo_ldap_logger_toggle");
-    if (loggerToggle) {
-        // Add visual feedback when toggle is clicked
-        loggerToggle.addEventListener("change", function () {
-            const form = this.closest('form');
-            if (form) {
-                // Add loading state
-                const label = this.nextElementSibling;
-                const originalText = label.textContent;
-                label.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Updating...';
-                
-                // Submit the form
-                form.submit();
-            }
+    const loggerForm = document.getElementById("logger-toggle-form");
+    if (loggerForm) {
+        loggerForm.querySelectorAll('input[type="radio"][name="mo_ldap_logger_toggle"]').forEach(function (radio) {
+            radio.addEventListener("change", function () {
+                loggerForm.submit();
+            });
         });
     }
 });

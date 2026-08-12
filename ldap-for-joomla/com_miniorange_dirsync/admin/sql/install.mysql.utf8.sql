@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `#__miniorange_dirsync_config` (
 `enable_dirsync_scheduler` VARCHAR(255)  NOT NULL ,
 `sync_interval` VARCHAR(255) NOT NULL,
 `delete_on_sync` VARCHAR(255)  NOT NULL,
-`ldap_login` VARCHAR(2)  NOT NULL DEFAULT '1',
+`ldap_login` VARCHAR(2)  NOT NULL DEFAULT 'ch',
 `username` VARCHAR(255),
 `email` VARCHAR(255),
 `name` VARCHAR(255),

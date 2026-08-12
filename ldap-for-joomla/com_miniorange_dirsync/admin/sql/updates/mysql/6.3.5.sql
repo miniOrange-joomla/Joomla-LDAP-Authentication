@@ -13,9 +13,8 @@ CREATE TABLE IF NOT EXISTS `#__mo_ldap_logs` (
 ALTER TABLE `#__miniorange_dirsync_config`
 ADD COLUMN `mo_ldap_enable_logger` TINYINT(1) NOT NULL DEFAULT 0;
 
--- Set ldap_login to default to enabled (true) for existing installations
 ALTER TABLE `#__miniorange_dirsync_config`
-MODIFY COLUMN `ldap_login` VARCHAR(2) NOT NULL DEFAULT '1';
+MODIFY `ldap_login` VARCHAR(2) NOT NULL DEFAULT 'ch';
 
 -- Added table for brute-force login protection
 CREATE TABLE IF NOT EXISTS `#__mo_ldap_login_attempts` (

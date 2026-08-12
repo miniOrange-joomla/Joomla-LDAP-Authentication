@@ -24,6 +24,7 @@ require_once JPATH_COMPONENT . '/helpers/mo_ldap_constants.php';
 // Access check.
 $app = Factory::getApplication();
 $user = $app->getIdentity();
+
 if (!$user->authorise('core.manage', 'com_miniorange_dirsync'))
 {
 	throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'));
@@ -35,15 +36,14 @@ jimport('joomla.application.component.controller');
 JLoader::registerPrefix('miniorange_dirsync', JPATH_COMPONENT_ADMINISTRATOR);
 
 // Get an instance of the controller prefixed by Joomla
-$controller=BaseController::getInstance('MiniorangeDirsync');
- 
+$controller = BaseController::getInstance('MiniorangeDirsync');
+
 // Perform the Request task
 $app = Factory::getApplication();
 
-// Use getInput() if available (Joomla 4+), otherwise fall back to $app->input (Joomla 3)
-$input = method_exists($app, 'getInput') ? $app->getInput() : $app->input;
+$input = MoLdapUtility::moLdapGetApplicationInput($app);
 
 $controller->execute($input->get('task'));
- 
+
 // Redirect if set by the controller
 $controller->redirect();

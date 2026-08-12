@@ -16,12 +16,20 @@ use Joomla\Database\DatabaseInterface;
 
 class MoDatabaseHelper
 {
-    public static function getDb()
-    {
-        if (method_exists(Factory::class, 'getContainer')) {
-            return Factory::getContainer()->get(DatabaseInterface::class);
-        }
+	public static function getDb()
+	{
+		if (method_exists(Factory::class, 'getContainer'))
+		{
+			try
+			{
+				return Factory::getContainer()->get(DatabaseInterface::class);
+			}
+			catch (\Throwable $e)
+			{
+				// Container not available on this version; fall back below.
+			}
+		}
 
-        return Factory::getDbo();
-    }
+		return Factory::getDbo();
+	}
 }

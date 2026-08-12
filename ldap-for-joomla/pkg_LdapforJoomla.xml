@@ -2,7 +2,7 @@
 <extension version="5.1.4" type="package" method="upgrade">
     <name>miniOrange LDAP Integration Package</name>
     <packagename>LdapforJoomla</packagename>
-    <version>6.4.3</version>
+    <version>6.4.7</version>
     <author>miniOrange Security Software Pvt. Ltd.</author>
     <authorEmail>info@xecurify.com</authorEmail>
     <authorUrl>http://miniorange.com</authorUrl>

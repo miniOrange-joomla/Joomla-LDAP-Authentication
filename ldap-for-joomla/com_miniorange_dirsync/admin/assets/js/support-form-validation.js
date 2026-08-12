@@ -93,6 +93,13 @@
         const isValid = validateForm(form);
         
         if (isValid) {
+            // Combine country code with phone number before submission
+            const countryCodeSelect = form.querySelector('[name="mo_ldap_country_code"]');
+            const phoneField = form.querySelector('[name="mo_ldap_query_phone"]');
+            if (countryCodeSelect && phoneField && phoneField.value.trim()) {
+                phoneField.value = countryCodeSelect.value + phoneField.value.trim();
+            }
+
             // Show loading state
             showLoadingState();
             
@@ -225,10 +232,12 @@
         // Remove existing validation classes
         field.classList.remove('is-valid', 'is-invalid', 'mo-issue-invalid');
         
-        // Add appropriate class - but skip is-invalid for the issue field to prevent black overlay
-        if (field.id === 'mo_ldap_setup_call_issue' && !isValid) {
-            // For the issue field, only add a custom class instead of is-invalid
-            field.classList.add('mo-issue-invalid');
+        // Skip Bootstrap's is-valid/is-invalid background-image on the issue select —
+        // its checkmark SVG renders as a dark box in dark mode.
+        if (field.id === 'mo_ldap_setup_call_issue') {
+            if (!isValid) {
+                field.classList.add('mo-issue-invalid');
+            }
         } else {
             field.classList.add(isValid ? 'is-valid' : 'is-invalid');
         }

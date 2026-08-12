@@ -29,16 +29,16 @@
         "icon" : "fas fa-th-large",
         "text" : "COM_MINIORANGE_TAB5_LDAP_PROVISIONING"
     },
-    "moLoggers" : {
-      "id" : "moLoggers",
-      "href" : "#loggers",
-      "icon" : "fa fa-shield",
-      "text" : "COM_MINIORANGE_TAB7_LOGGERS"
-    },
     "licensing" : {
         "id" : "mo_ldap_licensing_tab",
         "href" : "#licensing",
         "icon" : "fas fa-arrow-up",
         "text" : "COM_MINIORANGE_TAB6_UPGRADE"
+    },
+    "moLoggers" : {
+      "id" : "moLoggers",
+      "href" : "#loggers",
+      "icon" : "fa fa-shield",
+      "text" : "COM_MINIORANGE_TAB7_LOGGERS"
     }
 }

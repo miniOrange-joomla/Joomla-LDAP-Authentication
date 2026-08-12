@@ -24,38 +24,41 @@ use Joomla\CMS\Uri\Uri;
  *
  * @since  0.0.1
  */
-class miniorangedirsyncModelAccountSetup extends AdminModel
+if (!class_exists('MiniorangedirsyncModelAccountsetup', false))
 {
-
-	/**
-	 * Method to get the record form.
-	 *
-	 * @param   array    $data      Data for the form.
-	 * @param   boolean  $loadData  True if the form is to load its own data (default case), false if not.
-	 *
-	 * @return  mixed    A JForm object on success, false on failure
-	 *
-	 * @since   1.6
-	 */
-
-
-	public function getForm($data=array(), $loadData=true)
+	class MiniorangedirsyncModelAccountsetup extends AdminModel
 	{
-		// Get the form.
-		$form=$this->loadForm(
-			'com_miniorange_dirsync.accountsetup',
-			'accountsetup',
-			array(
-				'control'=> 'jform',
-				'load_data'=> $loadData
-			)
-		);
 
-		if (empty($form))
+		/**
+		 * Method to get the record form.
+		 *
+		 * @param   array    $data      Data for the form.
+		 * @param   boolean  $loadData  True if the form is to load its own data (default case), false if not.
+		 *
+		 * @return  mixed    A JForm object on success, false on failure
+		 *
+		 * @since   1.6
+		 */
+
+
+		public function getForm($data=array(), $loadData=true)
 		{
-			return false;
-		}
+			// Get the form.
+			$form = $this->loadForm(
+				'com_miniorange_dirsync.accountsetup',
+				'accountsetup',
+				array(
+				'control' => 'jform',
+				'load_data' => $loadData
+				)
+			);
 
-		return $form;
+			if (empty($form))
+			{
+				return false;
+			}
+
+			return $form;
+		}
 	}
 }
