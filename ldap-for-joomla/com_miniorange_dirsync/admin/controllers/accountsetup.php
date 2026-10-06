@@ -244,7 +244,6 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 				);
 
 				MoLdapUtility::moLdapUpdateData($databaseName, $updatefieldsarray, array('id' => '1'));
-				MoLdapCustomer::moLdapSendEfficiencyTracking('Basic Mapping Saved Successfully. ');
 				$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=attributerolemapping', Text::_('COM_MINIORANGE_ATTRIBUTE_MAPPING_SAVED_SUCCESSFULLY'));
 			}
 		}
@@ -555,12 +554,10 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 			MoLdapUtility::moLdapUpdateData($databaseName, $updatefieldsarray, array('id' => '1'));
 
 			$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration', Text::_('COM_MINIORANGE_CONNECTION_SUCCESSFUL_CONFIGURE_SEARCH_BASE'));
-			MoLdapCustomer::moLdapSendEfficiencyTracking('LDAP Connection Setting Saved Successfully. ');
 		}
 		else
 		{
 			$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration', Text::_('COM_MINIORANGE_MULTI_NO_PERMISSION_TO_SAVE'), 'error');
-			MoLdapCustomer::moLdapSendEfficiencyTracking('LDAP Connection Setting Failed. ');
 		}
 	}
 
@@ -724,21 +721,18 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 			{
 				echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
 				  <div class="mo_ldap_test_unsuccessful_details">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS1') . htmlspecialchars($username) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS2') . htmlspecialchars($username) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS3') . htmlspecialchars($result['search_filter']) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS4') . htmlspecialchars($searchBase) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS5') . '</div>';
-				MoLdapCustomer::moLdapSendEfficiencyTracking('Test Authentication Failed.(User not exist in LDAP)');
 				exit;
 			}
 			elseif ($authResponse->statusMessage == "BAD_SEARCH_FILTER")
 			{
 				echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
 				  <div class="mo_ldap_test_unsuccessful_details">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_CHECK_USERNAME1') . htmlspecialchars($username) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_CHECK_USERNAME2') . '</div>';
-				MoLdapCustomer::moLdapSendEfficiencyTracking('Test Authentication Failed. (Bad Search Filter)');
 				exit;
 			}
 			elseif ($authResponse->statusMessage == "LDAP_NOT_RESPONDING")
 			{
 				echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
 				  <div class="mo_ldap_test_unsuccessful_details">' . Text::_('COM_MINIORANGE_LDAP_NOT_RESPONDING') . '</div>';
-				MoLdapCustomer::moLdapSendEfficiencyTracking('Test Authentication Failed. (LDAP Not Responding)');
 				exit;
 			}
 			elseif ($authResponse->statusMessage == "USER_PASSWORD_DOESNTMATCH")
@@ -749,8 +743,6 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 			}
 			elseif ($authResponse->statusMessage == "SUCCESS")
 			{
-				MoLdapCustomer::moLdapSendEfficiencyTracking('Test Authentication Success. ');
-
 				// Success - Display attributes
 				error_reporting(E_ERROR | E_PARSE);
 

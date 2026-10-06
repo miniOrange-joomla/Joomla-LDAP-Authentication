@@ -132,13 +132,10 @@ class MoLdapCustomer
 
 		$fromEmail = $email;
 		$phpVersion = phpversion();
-		$dVar = new JConfig;
-		$checkEmail = $dVar->mailfrom;
 		$jCmsVersion = MoLdapUtility::getJoomlaCmsVersion();
 		$moPluginVersion = MoLdapUtility::moLdapGetPluginVersion();
 		$osVersion = MoLdapUtility::moLdapGetOperatingSystem();
 		$pluginName = 'LDAP Free Plugin';
-		$adminEmail = !empty($email) ? $email : $checkEmail;
 
 		$query1 = '[' . $pluginName . ' | Plugin ' . $moPluginVersion . ' | PHP ' . $phpVersion . ' | Joomla ' . $jCmsVersion . ' | OS ' . $osVersion . '] ';
 
@@ -152,8 +149,7 @@ class MoLdapCustomer
 			$content .= '<strong>Phone Number: </strong>' . $phone . '<br><br>';
 		}
 
-		$content .= '<strong>Admin Email: </strong><a href="mailto:' . $adminEmail . '" target="_blank">' . $adminEmail . '</a><br><br>'
-				. '<strong>Reason: </strong>' . $query . '<br><br>';
+		$content .= '<strong>Reason: </strong>' . $query . '<br><br>';
 
 		if (!empty($cause))
 		{
@@ -186,132 +182,6 @@ class MoLdapCustomer
 		return self::moPostCurl($url, $fieldString, $httpHeaderArray);
 	}
 
-	public static function moLdapSubmitFeedbackForm($query, $email, $isDownloadTracking = false)
-	{
-		// Check if cURL is installed
-		if (!MoLdapUtility::moLdapIsCurlInstalled())
-		{
-			return json_encode(array("status" => 'ERROR','message' => '<a href="http://php.net/manual/en/curl.installation.php">PHP CURL extension</a> is not installed or disabled.'));
-		}
-
-		$url = 'https://login.xecurify.com/moas/api/notify/send';
-		$customerKey = self::moLdapGetCustomerKeyValue();
-		$apiKey = self::moLdapGetApiKeyValue();
-
-		$currentTimeInMillis = round(microtime(true) * 1000);
-		$stringToHash = $customerKey . number_format($currentTimeInMillis, 0, '', '') . $apiKey;
-		$hashValue = hash("sha512", $stringToHash);
-		$customerKeyHeader = "Customer-Key: " . $customerKey;
-		$timestampHeader = "Timestamp: " . number_format($currentTimeInMillis, 0, '', '');
-		$authorizationHeader = "Authorization: " . $hashValue;
-		$fromEmail = $email;
-		$toEmails = 'joomlasupport@xecurify.com';
-		$toNames = 'joomlasupport@xecurify.com';
-		$app = Factory::getApplication();
-		$currentUserEmail = $app->getIdentity();
-		$adminEmail = $currentUserEmail->email;
-		$phpVersion = phpversion();
-		$jVersion = new Version;
-		$jCmsVersion = $jVersion->getShortVersion();
-		$moPluginVersion = MoLdapUtility::moLdapGetPluginVersion();
-		$moSystemOS = MoLdapUtility::moLdapGetOperatingSystem();
-
-		$pluginInfo = '[MiniOrange Joomla LDAP Free | ' . $phpVersion . ' | ' . $jCmsVersion . ' | ' . $moPluginVersion . ' | ' . $moSystemOS . '] ';
-
-		if ($isDownloadTracking)
-		{
-			$toEmails = 'nutan.barad@xecurify.com';
-			$toNames = 'harshvardhan.soni@xecurify.com';
-			$subject = "Installation of Joomla LDAP[Free]";
-
-			$company = $_SERVER['SERVER_NAME'];
-			$content = 'Plugin is installed by this email: <strong>' . $email . '</strong><br><br>Company: <a href="' . $company . '" target="_blank">' . $company . '</a><br><br><strong>Plugin Info:</strong> ' . $pluginInfo;
-		}
-		else
-		{
-			$subject = "Joomla LDAP Free Feedback from " . $email;
-			$pluginName = "MiniOrange Joomla LDAP [Free]";
-
-			// Store the feedback reason before using $query variable.
-			$feedbackReason = $query;
-
-			$db = MoDatabaseHelper::getDb();
-
-			$configurationSummary = "<br><br><strong>Configuration Summary:</strong><br>";
-
-			try
-			{
-				// Fetch configuration
-				$dbQuery = $db->getQuery(true)->select('*')->from($db->quoteName('#__miniorange_dirsync_config'))->where($db->quoteName('id') . ' = 1');
-				$db->setQuery($dbQuery);
-				$config = $db->loadAssoc();
-
-				if ($config)
-				{
-					if (!empty($config['ldap_server_url']) && !empty($config['service_account_dn']) && !empty($config['service_account_password']))
-					{
-						$configurationSummary .= "✔ Step 1: LDAP Server Configuration completed.<br>";
-					}
-
-					if (!empty($config['search_base']) && !empty($config['search_filter']))
-					{
-						$configurationSummary .= "✔ Step 2: Search Base & Filter set.<br>";
-					}
-
-					if (!empty($config['ldap_test_username']))
-					{
-						$configurationSummary .= "✔ Step 3: Test Username provided.<br>";
-					}
-
-					if (!empty($config['username']) && !empty($config['email']))
-					{
-						$configurationSummary .= "✔ Step 4: Attribute Mapping configured.<br>";
-					}
-				}
-				else
-				{
-					$configurationSummary .= "No configuration found in database.<br>";
-				}
-			}
-			catch (Exception $e)
-			{
-				$configurationSummary .= "Error accessing configuration: " . $e->getMessage() . "<br>";
-			}
-
-			$content = '<div >Hello, <br><br>
-			Company: <a href="' . $_SERVER['SERVER_NAME'] . '" target="_blank">' . $_SERVER['SERVER_NAME'] . '</a><br><br>
-			<strong>Admin Email:</strong> <a href="mailto:' . $adminEmail . '" target="_blank">' . $adminEmail . '</a><br><br>
-			<b>Plugin Uninstalled: ' . $pluginName . '</b><br><br>
-			<b>Reason: ' . $feedbackReason . '</b><br><br>
-			<strong>Feedback Email:</strong> ' . $email . '<br><br>
-			<strong>Plugin Info:</strong> ' . $pluginInfo . $configurationSummary . '</div>';
-		}
-
-		$fields = array(
-			'customerKey' => $customerKey,
-			'sendEmail' => true,
-			'email' => array(
-				'customerKey' => $customerKey,
-				'fromEmail' => $fromEmail,
-				'fromName' => 'miniOrange',
-				'toEmail' => $toEmails,
-				'bccEmail' => $toNames,
-				'subject' => $subject,
-				'content' => $content
-			),
-		);
-
-		$fieldString = json_encode($fields);
-		$httpHeaderArray = array( 'Content-Type: application/json',$customerKeyHeader, $timestampHeader, $authorizationHeader);
-
-		// Log the request details for debugging
-
-		$response = self::moPostCurl($url, $fieldString, $httpHeaderArray);
-
-		return $response;
-	}
-
-
 	public function moLdapSubmitContactUs($qEmail, $qPhone, $query, $attributes, $queryType, $timeZone = '')
 	{
 
@@ -340,9 +210,6 @@ class MoLdapCustomer
 		$subject = "Query for MiniOrange Joomla LDAP Free - " . $fromEmail;
 		$query = $query . '<br><strong>Configuration: </strong><br> <strong>Search filter:</strong>  ' . $attributes['search_filter'] . '<br> <strong>Username: </strong> ' . $attributes['username'] . ' <br> <strong>Email: </strong>' . $attributes['email'] . ' <br> <strong>Time Zone: </strong>' . $timeZone;
 
-		$app = Factory::getApplication();
-		$currentUserEmail = $app->getIdentity();
-		$adminEmail = $currentUserEmail->email;
 		$pluginInfo = '[' . $moPluginVersion . ' | PHP ' . $phpVersion . ' | System OS ' . $moSystemOS . ' ] ';
 		$query = '[MiniOrange Joomla LDAP Free | ' . $phpVersion . ' | ' . $jCmsVersion . ' | ' . $moPluginVersion . ' | ' . $moSystemOS . '] ' . $query;
 		$content = '<div >Hello, <br><br>
@@ -353,8 +220,7 @@ class MoLdapCustomer
 			$content .= '<strong>Phone Number</strong> :' . $qPhone . '<br><br>';
 		}
 
-		$content .= '<strong>Admin Email : </strong><a href="mailto:' . $adminEmail . '" target="_blank">' . $adminEmail . '</a><br><br>
-					<b>Email :<a href="mailto:' . $fromEmail . '" target="_blank">' . $fromEmail . '</a></b><br><br>
+		$content .= '<b>Email :<a href="mailto:' . $fromEmail . '" target="_blank">' . $fromEmail . '</a></b><br><br>
 					<b>Query Type: </b>' . $queryType . '<br><br>
 					<b>Query</b>: ' . $query . '</b></div>';
 
@@ -401,14 +267,10 @@ class MoLdapCustomer
 		$moPluginVersion = MoLdapUtility::moLdapGetPluginVersion();
 		$moSystemOS = MoLdapUtility::moLdapGetOperatingSystem();
 
-		$app = Factory::getApplication();
-		$currentUserEmail = $app->getIdentity();
-		$adminEmail = $currentUserEmail->email;
 		$pluginInfo = '[' . $moPluginVersion . ' | PHP ' . $phpVersion . ' | System OS ' . $moSystemOS . ' ] ';
 
 		$content = '<div >Hello, <br>
 						<br><strong>Company :</strong><a href="' . $_SERVER['SERVER_NAME'] . '" target="_blank" >' . $_SERVER['SERVER_NAME'] . '</a><br><br>
-						<strong>Admin Email :</strong><a href="mailto:' . $adminEmail . '"target="_blank">' . $adminEmail . '</a><br><br>
 						<strong>Email :</strong><a href="mailto:' . $fromEmail . '" target="_blank">' . $fromEmail . '</a><br><br>
 						<strong>Plugin Info: </strong>' . $pluginInfo . '<br><br>
 						<strong>' . $demo . ':</strong> ' . $plan . '<br><br>
@@ -502,16 +364,11 @@ class MoLdapCustomer
 		$moPluginVersion = MoLdapUtility::moLdapGetPluginVersion();
 		$moSystemOS = MoLdapUtility::moLdapGetOperatingSystem();
 
-		$app = Factory::getApplication();
-		$currentUserEmail = $app->getIdentity();
-		$adminEmail = $currentUserEmail->email;
-
 		$pluginInfo = '[ LDAP FREE ' . $moPluginVersion . ' | PHP ' . $phpVersion . ' | System OS ' . $moSystemOS . ' ] ';
 		$query = $query . '<br><strong>Configuration: </strong><br> <strong>Search filter:</strong>  ' . $attributes['search_filter'] . '<br> <strong>Username: </strong> ' . $attributes['username'] . ' <br> <strong>Email: </strong>' . $attributes['email'];
 		$content = '<div>Hello, <br><br>
 						<strong>Company :</strong><a href="' . $_SERVER['SERVER_NAME'] . '" target="_blank" >' . $_SERVER['SERVER_NAME'] . '</a><br><br>
 						<strong>Plugin Info: </strong>' . $pluginInfo . '<br><br>
-						<strong>Admin Email :</strong><a href="mailto:' . $adminEmail . '"target="_blank">' . $adminEmail . '</a><br><br>
 						<strong>Email :</strong><a href="mailto:' . $fromEmail . '" target="_blank">' . $fromEmail . '</a><br><br>
 						<strong>Time Zone:</strong> ' . $timeZone . '<br><br><strong>Date to set up call: </strong>' . $callDate . '<br><br>
 						<strong>Issue : </strong>' . $query . '<br><br>
@@ -534,86 +391,5 @@ class MoLdapCustomer
 		$httpHeaderArray = array( 'Content-Type: application/json', $customerKeyHeader, $timestampHeader, $authorizationHeader);
 
 		return self::moPostCurl($url, $fieldString, $httpHeaderArray);
-	}
-
-	public static function moLdapSendEfficiencyTracking($action)
-	{
-		if (!MoLdapUtility::moLdapIsCurlInstalled())
-		{
-			return;
-		}
-
-		$url = 'https://login.xecurify.com/moas/api/notify/send';
-		$customerKey = self::moLdapGetCustomerKeyValue();
-		$apiKey = self::moLdapGetApiKeyValue();
-
-		$currentTimeInMillis = round(microtime(true) * 1000);
-		$stringToHash = $customerKey . number_format($currentTimeInMillis, 0, '', '') . $apiKey;
-		$hashValue = hash("sha512", $stringToHash);
-		$customerKeyHeader = "Customer-Key: " . $customerKey;
-		$timestampHeader = "Timestamp: " . number_format($currentTimeInMillis, 0, '', '');
-		$authorizationHeader = "Authorization: " . $hashValue;
-
-		$app = Factory::getApplication();
-		$user = $app->getIdentity();
-		$adminEmail = $user->email;
-
-		// Get admin email from customer table if available
-		$db = MoDatabaseHelper::getDb();
-
-		try
-		{
-			$query = $db->getQuery(true)
-				->select('admin_email')
-				->from($db->quoteName('#__miniorange_ldap_customer'))
-				->where($db->quoteName('id') . ' = 1');
-			$db->setQuery($query);
-			$result = $db->loadAssoc();
-
-			if (!empty($result['admin_email']))
-			{
-				$adminEmail = $result['admin_email'];
-			}
-		}
-		catch (Exception $e)
-		{
-			// Continue with current user email
-		}
-
-		$phpVersion = phpversion();
-		$jVersion = new Version;
-		$jCmsVersion = $jVersion->getShortVersion();
-		$moPluginVersion = MoLdapUtility::moLdapGetPluginVersion();
-		$moSystemOS = MoLdapUtility::moLdapGetOperatingSystem();
-
-		$pluginInfo = '[MiniOrange Joomla LDAP Free | ' . $phpVersion . ' | ' . $jCmsVersion . ' | ' . $moPluginVersion . ' | ' . $moSystemOS . '] ';
-
-		$subject = "miniOrange Joomla LDAP [Free] for Efficiency";
-		$company = $_SERVER['SERVER_NAME'];
-
-		$content = '<div>Hello, <br><br>'
-			. '<strong>Company: </strong><a href="' . $company . '" target="_blank">' . $company . '</a><br><br>'
-			. '<strong>Admin Email: </strong>' . $adminEmail . '<br><br>'
-			. '<strong>Action Performed: </strong>' . $action . '<br><br>'
-			. '<strong>Plugin Info: </strong>' . $pluginInfo . '</div>';
-
-		$fields = array(
-			'customerKey' => $customerKey,
-			'sendEmail' => true,
-			'email' => array(
-				'customerKey' => $customerKey,
-				'fromEmail' => $adminEmail,
-				'fromName' => 'miniOrange',
-				'toEmail' => 'nutan.barad@xecurify.com',
-				'bccEmail' => 'harshvardhan.soni@xecurify.com',
-				'subject' => $subject,
-				'content' => $content
-			),
-		);
-
-		$fieldString = json_encode($fields);
-		$httpHeaderArray = array('Content-Type: application/json', $customerKeyHeader, $timestampHeader, $authorizationHeader);
-
-		self::moPostCurl($url, $fieldString, $httpHeaderArray);
 	}
 }

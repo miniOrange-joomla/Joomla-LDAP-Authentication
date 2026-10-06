@@ -14,6 +14,8 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\Installer;
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\Session\Session;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\Database\DatabaseInterface;
 jimport('joomla.plugin.plugin');
 
@@ -81,6 +83,14 @@ if (!class_exists('PlgSystemMiniorangedirsync', false))
 			// Check if this is feedback submission
 			if (isset($post['ldap_feedback']) || isset($post['ldap_skip_feedback']))
 			{
+				$user = Factory::getUser();
+				$isAdmin = method_exists($app, 'isClient') ? $app->isClient('administrator') : $app->isAdmin();
+
+				if (!$isAdmin || !$user->authorise('core.manage', 'com_installer') || !Session::checkToken())
+				{
+					return;
+				}
+
 				if ($tab)
 				{
 					$radio = isset($post['deactivate_plugin']) ? $post['deactivate_plugin'] : '';
@@ -103,64 +113,45 @@ if (!class_exists('PlgSystemMiniorangedirsync', false))
 						// Continue
 					}
 
-					// Get admin email and phone
-					$db = $this->getDb();
-
-					try
-					{
-						$query = $db->getQuery(true);
-						$query->select('admin_email, admin_phone')
-							->from($db->quoteName('#__miniorange_ldap_customer'))
-							->where($db->quoteName('id') . ' = 1');
-						$db->setQuery($query);
-						$customerResult = $db->loadAssoc();
-						$adminEmail = isset($customerResult['admin_email']) ? $customerResult['admin_email'] : '';
-						$adminPhone = isset($customerResult['admin_phone']) ? $customerResult['admin_phone'] : '';
-					}
-					catch (Exception $e)
-					{
-						$adminEmail = '';
-						$adminPhone = '';
-					}
-
 					$data1 = $radio . ' : ' . $data . '  <br><br><strong>Email:</strong>  ' . $feedbackEmail;
 
-					if (isset($post['ldap_skip_feedback']))
-					{
-						$data1 = 'Skipped the feedback';
-					}
-
-					// Send email if not skipped
-					if (file_exists(JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/mo_customer_setup.php'))
+					if (!isset($post['ldap_skip_feedback'])
+						&& file_exists(JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/mo_customer_setup.php'))
 					{
 						require_once JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/mo_customer_setup.php';
 						require_once JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/mo_ldap_utility.php';
 
 						try
 						{
-							$response = MoLdapCustomer::submitUninstallFeedbackForm($adminEmail, $adminPhone, $data1, '', $feedbackEmail);
+							MoLdapCustomer::submitUninstallFeedbackForm($feedbackEmail, '', $data1, '', $feedbackEmail);
 						}
 						catch (Exception $e)
 						{
-							echo "<h2 style='color:red;'>❌ Exception caught!</h2>";
-							echo "<p>Error: " . $e->getMessage() . "</p>";
 						}
 					}
 
-					// Uninstall all LDAP components
+					$allowed = array(
+						'com_miniorange_dirsync',
+						'miniorangedirsync',
+						'moldap',
+						'miniorangemoldap',
+						'pkg_LdapforJoomla',
+					);
+
 					if (isset($post['result']) && is_array($post['result']))
 					{
 						foreach ($post['result'] as $fbkey)
 						{
+							$fbkey = (int) $fbkey;
 							$db = $this->getDb();
 							$query = $db->getQuery(true);
-							$query->select('type, name')
+							$query->select('type, element')
 								->from($db->quoteName('#__extensions'))
-								->where($db->quoteName('extension_id') . ' = ' . (int) $fbkey);
+								->where($db->quoteName('extension_id') . ' = ' . $fbkey);
 							$db->setQuery($query);
 							$extension = $db->loadObject();
 
-							if ($extension)
+							if ($extension && in_array($extension->element, $allowed, true))
 							{
 								$cid = 0;
 
@@ -334,10 +325,9 @@ if (!class_exists('PlgSystemMiniorangedirsync', false))
 
 			$hiddenCidInputs = '';
 
-			foreach ($tpostData['cid'] as $key)
+			foreach ((array) ($tpostData['cid'] ?? array()) as $key)
 			{
-				$hiddenCidInputs .= '<input type="hidden" name="result[]" value="';
-				$hiddenCidInputs .= htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8') . '">';
+				$hiddenCidInputs .= '<input type="hidden" name="result[]" value="' . (int) $key . '">';
 			}
 
 			?>
@@ -346,6 +336,7 @@ if (!class_exists('PlgSystemMiniorangedirsync', false))
 			<span onclick="skipLdapForm()" style="position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer;" title="Skip Feedback">&times;</span>
 			<h1>Feedback form for LDAP Free Plugin</h1>
 			<form name="f" method="post" action="" id="ldap_feedback" style="background: #f3f1f1; padding: 10px;">
+				<?php echo HTMLHelper::_('form.token'); ?>
 				<h3>What Happened? </h3>
 				<input type="hidden" name="ldap_feedback" value="ldap_feedback"/>
 				<div>
@@ -367,6 +358,7 @@ if (!class_exists('PlgSystemMiniorangedirsync', false))
 				</div>
 			</form>
 			<form name="f" method="post" action="" id="ldap_feedback_form_close" style="display:none;">
+				<?php echo HTMLHelper::_('form.token'); ?>
 				<input type="hidden" name="ldap_skip_feedback" value="ldap_skip_feedback"/>
 				<?php echo $hiddenCidInputs; ?>
 			</form>

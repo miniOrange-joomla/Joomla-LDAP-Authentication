@@ -34,7 +34,6 @@ class PkgLdapforjoomlaInstallerScript
 
 		$this->enableExtensions();
 		$this->addUserColumn();
-		$this->pluginEfficiencyCheck();
 		$this->showInstallMessage('');
 
 		return true;
@@ -203,26 +202,6 @@ class PkgLdapforjoomlaInstallerScript
 		{
 			// Never fail uninstallation because of this optional column.
 			error_log('miniOrange LDAP: failed to remove user_already_exist column: ' . $e->getMessage());
-		}
-	}
-
-	/**
-	 * Submit plugin installation feedback.
-	 *
-	 * @return  void
-	 */
-	private function pluginEfficiencyCheck(): void
-	{
-		$app = Factory::getApplication();
-		$user = $app->getIdentity();
-		$email = isset($user->email) ? $user->email : 'admin@unknown.com';
-
-		$helperPath = JPATH_BASE . '/components/com_miniorange_dirsync/helpers/mo_customer_setup.php';
-
-		if (file_exists($helperPath))
-		{
-			require_once $helperPath;
-			MoLdapCustomer::moLdapSubmitFeedbackForm("Plugin Installed", $email, true);
 		}
 	}
 
