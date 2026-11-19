@@ -1,38 +1,44 @@
 {
+    "overview" : {
+        "id" : "mo_ldap_overview_tab",
+        "href" : "#overview",
+        "icon" : "fa fa-list-alt",
+        "text" : "COM_MINIORANGE_TAB0_OVERVIEW"
+    },
     "ldapconfiguration" : {
         "id" : "mo_ldap_ldapconfig_tab",
         "href" : "#ldapconfiguration",
-        "icon" : "fas fa-sliders",
+        "icon" : "fa fa-cog",
         "text" : "COM_MINIORANGE_TAB1_LDAP_CONFIGURATION"
     },
     "attributerolemapping" : {
         "id" : "mo_ldap_attribute_mapping_tab",
         "href" : "#attributerolemapping",
-        "icon" : "fas fa-user",
+        "icon" : "fa fa-user",
         "text" : "COM_MINIORANGE_TAB2_ATTRIBUTE_MAPPING_CONFIGURATION"
     },
     "signinsettings" : {
         "id" : "mo_ldap_signinsettings_tab",
         "href" : "#signinsettings",
-        "icon" : "fas fa-gear",
+        "icon" : "fa fa-sign-in",
         "text" : "COM_MINIORANGE_TAB3_LOGIN_SETTINGS_TAB"
     },
     "ntlmsso" : {
         "id" : "mo_ldap_ntlm_sso",
         "href" : "#ntlmsso",
-        "icon" : "fas fa-puzzle-piece",
+        "icon" : "fa fa-puzzle-piece",
         "text" : "COM_MINIORANGE_TAB4_LDAP_NTLM_SSO"
     },
     "addons" : {
         "id" : "mo_ldap_addons_tab",
         "href" : "#addons",
-        "icon" : "fas fa-th-large",
+        "icon" : "fa fa-th-large",
         "text" : "COM_MINIORANGE_TAB5_LDAP_PROVISIONING"
     },
     "licensing" : {
         "id" : "mo_ldap_licensing_tab",
         "href" : "#licensing",
-        "icon" : "fas fa-arrow-up",
+        "icon" : "fa fa-arrow-up",
         "text" : "COM_MINIORANGE_TAB6_UPGRADE"
     },
     "moLoggers" : {

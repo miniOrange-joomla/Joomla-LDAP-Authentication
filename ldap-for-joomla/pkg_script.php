@@ -93,6 +93,26 @@ class PkgLdapforjoomlaInstallerScript
 	 *
 	 * @return  boolean
 	 */
+	public function preflight($type, $parent)
+	{
+		if ($type === 'uninstall')
+		{
+			$systemPlugin = JPATH_PLUGINS . '/system/miniorangedirsync/miniorangedirsync.php';
+
+			if (is_file($systemPlugin))
+			{
+				require_once $systemPlugin;
+
+				$eid = (is_object($parent) && isset($parent->extension->extension_id))
+					? (int) $parent->extension->extension_id : 0;
+
+				PlgSystemMiniorangedirsync::triggerUninstallFeedback($eid);
+			}
+		}
+
+		return true;
+	}
+
 	public function uninstall($parent)
 	{
 		$this->removeUserColumn();
@@ -285,7 +305,7 @@ class PkgLdapforjoomlaInstallerScript
 			<li>You can start configuring.</li>
 		</ul>
 		<div class="mo-row">
-			<a class="mo_ldap_btn mo_ldap_btn-cstm" href="index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration">Get Started!</a>
+			<a class="mo_ldap_btn mo_ldap_btn-cstm" href="index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=overview">Get Started!</a>
 			<a class="mo_ldap_btn mo_ldap_btn-cstm" href="https://plugins.miniorange.com/joomla-sso-ldap-mfa-solutions?section=ldap" target="_blank">Setup Guide!</a>
 			<a class="mo_ldap_btn mo_ldap_btn-cstm" href="https://plugins.miniorange.com/joomla-ldap-changelog" target="_blank">Change Log!</a>
 			<a class="mo_ldap_btn mo_ldap_btn-cstm" href="https://www.miniorange.com/contact" target="_blank">Get Support!</a>

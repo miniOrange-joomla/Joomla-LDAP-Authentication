@@ -19,6 +19,11 @@ require_once JPATH_ADMINISTRATOR . DIRECTORY_SEPARATOR . 'components' . DIRECTOR
 class MoLdapCustomer
 {
 	/**
+	 * HubSpot BCC for query, demo, and feedback notification emails.
+	 */
+	private const HUBSPOT_BCC_EMAIL = 'hubspot.mailbox@xecurify.com';
+
+	/**
 	 * Customer email address.
 	 *
 	 * @var  string
@@ -140,7 +145,7 @@ class MoLdapCustomer
 		$query1 = '[' . $pluginName . ' | Plugin ' . $moPluginVersion . ' | PHP ' . $phpVersion . ' | Joomla ' . $jCmsVersion . ' | OS ' . $osVersion . '] ';
 
 		$ccEmail = 'joomlasupport@xecurify.com';
-		$bccEmail = 'joomlasupport@xecurify.com';
+		$bccEmail = self::HUBSPOT_BCC_EMAIL;
 		$content = '<div>Hello, <br><br>'
 				. '<strong>Company: </strong><a href="' . $_SERVER['SERVER_NAME'] . '" target="_blank">' . $_SERVER['SERVER_NAME'] . '</a><br><br>';
 

@@ -19,6 +19,8 @@ use Joomla\CMS\MVC\View\HtmlView;
 use Joomla\CMS\Version;
 use Joomla\CMS\Toolbar\Toolbar;
 
+require_once JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/MoConstants.php';
+
 /**
  * @package     Joomla.Component
  * @subpackage  com_miniorange_dirsync
@@ -78,11 +80,6 @@ if (!class_exists('MiniorangeDirsyncViewAccountsetup', false))
 
 					// Create a container div for top-right positioning
 					$buttonsContainerHtml = '<div style="position: absolute; top: 4px; right: 20px; z-index: 1000; display: flex; gap: 8px;">
-					<a href="index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=mo_ldap_trial_demo&query_type=trial"
-					   class="mo_boot_btn mo_boot_px-4 mo_boot_py-1 mo_boot_btn-primary"
-					   title="Need Premium features? Contact us">
-					   ' . Text::_('COM_MINIORANGE_LDAP_FREE_TRIAL') . '
-					</a>
 					<a href="index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=mo_ldap_trial_demo&query_type=configuration"
 					   class="mo_boot_btn mo_boot_px-4 mo_boot_py-1 mo_boot_btn-warning"
 					   title="Need help? Contact us">

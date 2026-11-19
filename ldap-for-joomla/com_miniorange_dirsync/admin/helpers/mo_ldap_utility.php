@@ -154,29 +154,224 @@ class MoLdapUtility
 		return $app->input;
 	}
 
-	public static function moLdapEncrypt($str)
+	/**
+	 * Get the current user across Joomla 3 (JUser via Factory::getUser) and Joomla 4+ (User identity).
+	 *
+	 * @param   object|null  $app  Optional CMSApplication instance.
+	 *
+	 * @return  \Joomla\CMS\User\User|\JUser
+	 */
+	public static function moLdapGetApplicationUser($app = null)
 	{
-		if (!self::moLdapIsExtensionInstalled('openssl'))
+		if ($app === null)
 		{
-			return;
+			$app = Factory::getApplication();
 		}
 
-		$key = 99189;
+		if (method_exists($app, 'getIdentity'))
+		{
+			return $app->getIdentity();
+		}
 
-		return base64_encode(openssl_encrypt($str, 'aes-128-ecb', $key, OPENSSL_RAW_DATA));
+		return Factory::getUser();
+	}
+
+	public static function moLdapEncrypt($str)
+	{
+		if ($str === null || $str === '')
+		{
+			return '';
+		}
+
+		if (!self::moLdapIsExtensionInstalled('openssl'))
+		{
+			return '';
+		}
+
+		$key = self::moLdapGetEncryptionKey();
+		$iv = random_bytes(16);
+		$ciphertext = openssl_encrypt($str, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
+
+		if ($ciphertext === false)
+		{
+			return '';
+		}
+
+		return 'v2:' . base64_encode($iv . $ciphertext);
 	}
 
 	public static function moLdapDecrypt($value)
 	{
+		if ($value === null || $value === '')
+		{
+			return '';
+		}
+
 		if (!self::moLdapIsExtensionInstalled('openssl'))
+		{
+			return '';
+		}
+
+		if (is_string($value) && strpos($value, 'v2:') === 0)
+		{
+			$payload = base64_decode(substr($value, 3), true);
+
+			if ($payload === false || strlen($payload) <= 16)
+			{
+				return '';
+			}
+
+			$iv = substr($payload, 0, 16);
+			$ciphertext = substr($payload, 16);
+			$string = openssl_decrypt($ciphertext, 'aes-256-cbc', self::moLdapGetEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+
+			return $string === false ? '' : $string;
+		}
+
+		$legacyKey = 99189;
+		$string = rtrim(openssl_decrypt(base64_decode($value), 'aes-128-ecb', $legacyKey, OPENSSL_RAW_DATA), "\0");
+
+		return trim($string, "\0..\32");
+	}
+
+	/**
+	 * Derive encryption key from the Joomla site secret (not stored in source).
+	 *
+	 * @return string
+	 */
+	private static function moLdapGetEncryptionKey()
+	{
+		$secret = Factory::getApplication()->get('secret');
+
+		return hash('sha256', $secret . 'miniorange_ldap_storage', true);
+	}
+
+	/**
+	 * Whether the IP/username pair is temporarily blocked after failed attempts.
+	 *
+	 * @param   string  $ipAddress  Client IP address.
+	 * @param   string  $username   Login username.
+	 *
+	 * @return boolean
+	 */
+	public static function moLdapIsLoginBlocked($ipAddress, $username)
+	{
+		$loginAttemptData = self::moLdapFetchData(
+			'#__mo_ldap_login_attempts',
+			array('ip_address' => $ipAddress, 'username' => $username)
+		);
+
+		if (!$loginAttemptData)
+		{
+			return false;
+		}
+
+		$userLoginAttempts = (int) $loginAttemptData['user_login_attempts'];
+		$userBlockedUntil = $loginAttemptData['blocked_until'];
+		$currentTime = date('Y-m-d H:i:s');
+
+		return $userLoginAttempts >= 5
+			&& !empty($userBlockedUntil)
+			&& strtotime($currentTime) < strtotime($userBlockedUntil);
+	}
+
+	/**
+	 * Record a failed login and apply lockout after five attempts.
+	 *
+	 * @param   string  $ipAddress  Client IP address.
+	 * @param   string  $username   Login username.
+	 *
+	 * @return void
+	 */
+	public static function moLdapRecordFailedLoginAttempt($ipAddress, $username)
+	{
+		$db = MoDatabaseHelper::getDb();
+		$loginAttemptData = self::moLdapFetchData(
+			'#__mo_ldap_login_attempts',
+			array('ip_address' => $ipAddress, 'username' => $username)
+		);
+		$currentTime = date('Y-m-d H:i:s');
+		$attempts = 1;
+		$blockedUntil = null;
+
+		if ($loginAttemptData)
+		{
+			$attempts = (int) $loginAttemptData['user_login_attempts'] + 1;
+			$blockedUntil = null;
+
+			if ($attempts >= 5)
+			{
+				$blockedUntil = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+			}
+
+			self::moLdapUpdateData(
+				'#__mo_ldap_login_attempts',
+				array(
+					'user_login_attempts' => $attempts,
+					'blocked_until' => $blockedUntil,
+					'last_attempt' => $currentTime,
+				),
+				array('ip_address' => $ipAddress, 'username' => $username)
+			);
+
+			return;
+		}
+
+		if ($attempts >= 5)
+		{
+			$blockedUntil = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+		}
+
+		$query = $db->getQuery(true)
+			->insert($db->quoteName('#__mo_ldap_login_attempts'))
+			->columns(array(
+				$db->quoteName('username'),
+				$db->quoteName('ip_address'),
+				$db->quoteName('user_login_attempts'),
+				$db->quoteName('blocked_until'),
+				$db->quoteName('last_attempt'),
+				)
+			)
+			->values(
+				$db->quote($username) . ', '
+				. $db->quote($ipAddress) . ', '
+				. (int) $attempts . ', '
+				. ($blockedUntil === null ? 'NULL' : $db->quote($blockedUntil)) . ', '
+				. $db->quote($currentTime)
+			);
+		$db->setQuery($query);
+		$db->execute();
+	}
+
+	/**
+	 * Clear failed-login counters after a successful authentication.
+	 *
+	 * @param   string  $ipAddress  Client IP address.
+	 * @param   string  $username   Login username.
+	 *
+	 * @return void
+	 */
+	public static function moLdapClearLoginAttempts($ipAddress, $username)
+	{
+		$loginAttemptData = self::moLdapFetchData(
+			'#__mo_ldap_login_attempts',
+			array('ip_address' => $ipAddress, 'username' => $username)
+		);
+
+		if (!$loginAttemptData)
 		{
 			return;
 		}
 
-		$key = 99189;
-		$string = rtrim(openssl_decrypt(base64_decode($value), 'aes-128-ecb', $key, OPENSSL_RAW_DATA), "\0");
-
-		return trim($string, "\0..\32");
+		self::moLdapUpdateData(
+			'#__mo_ldap_login_attempts',
+			array(
+				'user_login_attempts' => 0,
+				'blocked_until' => date('Y-m-d H:i:s', strtotime('+1 year')),
+				'last_attempt' => date('Y-m-d H:i:s'),
+			),
+			array('ip_address' => $ipAddress, 'username' => $username)
+		);
 	}
 
 
@@ -377,7 +572,14 @@ class MoLdapUtility
 
 		foreach ($tableFields as $key => $value)
 		{
-			array_push($sanFields, $db->quoteName($key) . '=' . $db->quote($value));
+			if ($value === null)
+			{
+				array_push($sanFields, $db->quoteName($key) . ' = NULL');
+			}
+			else
+			{
+				array_push($sanFields, $db->quoteName($key) . ' = ' . $db->quote($value));
+			}
 		}
 
 		$sanConditions = array();
@@ -730,6 +932,13 @@ class MoLdapUtility
 							{
 								foreach ($decryptFields[$tableName] as $field)
 								{
+									if ($field === 'service_account_password')
+									{
+										$row->$field = '';
+
+										continue;
+									}
+
 									if (isset($row->$field) && $row->$field !== '')
 									{
 										$row->$field = self::moLdapDecrypt($row->$field);

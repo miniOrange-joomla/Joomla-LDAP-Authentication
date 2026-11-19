@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="component" version="5.1.4" method="upgrade">
 	<name>COM_MINIORANGE_DIRSYNC</name>
-    <version>6.4.8</version>
+    <version>6.5.0</version>
     <author>miniOrange Security Software Pvt. Ltd.</author>
     <creationDate>Dec 2019</creationDate>
     <authorEmail>info@xecurify.com</authorEmail>
@@ -9,6 +9,7 @@
     <license>GNU General Public License version 3; see LICENSE.txt</license>
     <copyright>Copyright (C) 2015 miniOrange. All rights reserved.</copyright>
 	<description>COM_MINIORANGE_DIRSYNC_DESCRIPTION</description>
+	<scriptfile>script.php</scriptfile>
 
 	<install> <!-- Runs on install -->
 		<sql>
@@ -28,15 +29,16 @@
     </update>
 	<administration>
 		<!-- Administration Menu Section -->
-		<menu link="option=com_miniorange_dirsync&amp;view=accountsetup">COM_MINIORANGE_LDAP_MENU</menu>
+		<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=overview">COM_MINIORANGE_LDAP_MENU</menu>
 		<submenu>
+			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=overview">COM_MINIORANGE_TAB0_OVERVIEW</menu>
 			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=ldapconfiguration">COM_MINIORANGE_TAB1_LDAP_CONFIGURATION</menu>
 			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=attributerolemapping">COM_MINIORANGE_TAB2_ATTRIBUTE_MAPPING_CONFIGURATION</menu>
 			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=signinsettings">COM_MINIORANGE_TAB3_LOGIN_SETTINGS_TAB</menu>
 			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=ntlmsso">COM_MINIORANGE_TAB4_LDAP_NTLM_SSO</menu>
 			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=addons">COM_MINIORANGE_TAB5_LDAP_PROVISIONING</menu>
 			<menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=licensing">COM_MINIORANGE_TAB6_UPGRADE</menu>
-            <menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=loggers">COM_MINIORANGE_TAB7_LOGGERS</menu>
+            <menu link="option=com_miniorange_dirsync&amp;view=accountsetup&amp;tab-panel=moLoggers">COM_MINIORANGE_TAB7_LOGGERS</menu>
 		</submenu>
 
 		<files folder="admin">

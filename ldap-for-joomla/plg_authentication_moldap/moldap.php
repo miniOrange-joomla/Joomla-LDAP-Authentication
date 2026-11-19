@@ -58,7 +58,7 @@ if (defined('_JEXEC'))
 			if ($upasswd == '' || $upasswd == ' ')
 			{
 				$response->status = Authentication::STATUS_FAILURE;
-				$app->enqueueMessage('Kindly please enter the password.', 'warning');
+				$app->enqueueMessage(Text::_('PLG_AUTHENTICATION_MOLDAP_LOGIN_FAILED'), 'warning');
 
 				return;
 			}
@@ -71,6 +71,15 @@ if (defined('_JEXEC'))
 				$ipAddress = $_SERVER['REMOTE_ADDR'];
 				$validatefilter = InputFilter::getInstance();
 				$username = $validatefilter->clean($uname, 'username');
+
+				if (MoLdapUtility::moLdapIsLoginBlocked($ipAddress, $username))
+				{
+					MoLdapLogger::addLog('Login attempt blocked for ' . $username . ' from ' . $ipAddress, 'WARNING');
+					$response->status = Authentication::STATUS_FAILURE;
+					$app->enqueueMessage(Text::_('PLG_AUTHENTICATION_MOLDAP_LOGIN_FAILED'), 'warning');
+
+					return;
+				}
 
 				// NOT VALIDATING PASSWORDS AS THEY MIGHT CONTAIN SPECIAL CHARACTERS
 				$password = $upasswd;
@@ -119,6 +128,11 @@ if (defined('_JEXEC'))
 
 							if (!$info)
 							{
+								MoLdapLogger::addLog('LDAP user not found for login attempt.', 'WARNING');
+								MoLdapUtility::moLdapRecordFailedLoginAttempt($ipAddress, $username);
+								$response->status = Authentication::STATUS_FAILURE;
+								$app->enqueueMessage(Text::_('PLG_AUTHENTICATION_MOLDAP_LOGIN_FAILED'), 'warning');
+
 								return;
 							}
 
@@ -126,6 +140,11 @@ if (defined('_JEXEC'))
 
 							if (!$userAuth)
 							{
+								MoLdapLogger::addLog('LDAP user authentication failed.', 'WARNING');
+								MoLdapUtility::moLdapRecordFailedLoginAttempt($ipAddress, $username);
+								$response->status = Authentication::STATUS_FAILURE;
+								$app->enqueueMessage(Text::_('PLG_AUTHENTICATION_MOLDAP_LOGIN_FAILED'), 'warning');
+
 								return;
 							}
 
@@ -187,15 +206,13 @@ if (defined('_JEXEC'))
 
 							if ($joomlaUserId == 0)
 							{
-								$app->enqueueMessage(
-									Text::_('PLG_AUTHENTICATION_MOLDAP_USER_NOT_IN_JOOMLA'),
-									'error'
-								);
 								MoLdapLogger::addLog(
 									"User {$response->username} does not exist in Joomla. LDAP login requires an existing Joomla account.",
 									'WARNING'
 								);
+								MoLdapUtility::moLdapRecordFailedLoginAttempt($ipAddress, $username);
 								$response->status = Authentication::STATUS_FAILURE;
+								$app->enqueueMessage(Text::_('PLG_AUTHENTICATION_MOLDAP_LOGIN_FAILED'), 'warning');
 
 								return;
 							}
@@ -205,9 +222,9 @@ if (defined('_JEXEC'))
 
 							if ((int) $joomlaUser->block === 1)
 							{
-								$app->enqueueMessage('<strong>Error:</strong> ' . Text::_('JERROR_NOLOGIN_BLOCKED'), 'error');
 								MoLdapLogger::addLog('Login blocked for user ' . $response->username, 'WARNING');
 								$response->status = Authentication::STATUS_FAILURE;
+								$app->enqueueMessage(Text::_('PLG_AUTHENTICATION_MOLDAP_LOGIN_FAILED'), 'warning');
 
 								return;
 							}
@@ -254,30 +271,7 @@ if (defined('_JEXEC'))
 								}
 							}
 
-							$loginAttemptData = MoLdapUtility::moLdapFetchData(
-								'#__mo_ldap_login_attempts',
-								array('ip_address' => $ipAddress, 'username' => $username)
-							);
-
-							if ($loginAttemptData)
-							{
-								$userBlockedUntil = $loginAttemptData['blocked_until'];
-								$userLoginAttempts = $loginAttemptData['user_login_attempts'];
-
-								if ($userLoginAttempts >= 5 && $userBlockedUntil && strtotime($currentTime) < strtotime($userBlockedUntil))
-								{
-									$app->enqueueMessage('<strong>Error:</strong> ' . Text::_('PLG_AUTH_LDAP_LOGIN_BLOCKED_MESSAGE'), 'error');
-									$response->status = Authentication::STATUS_FAILURE;
-
-									return;
-								}
-							}
-
-							MoLdapUtility::moLdapUpdateData(
-								'#__mo_ldap_login_attempts',
-								array('user_login_attempts' => 0, 'blocked_until' => date('Y-m-d H:i:s', strtotime('+1 year'))),
-								array('ip_address' => $ipAddress, 'username' => $username)
-							);
+							MoLdapUtility::moLdapClearLoginAttempts($ipAddress, $username);
 
 							if (!empty($response->fullname))
 							{
@@ -339,12 +333,18 @@ if (defined('_JEXEC'))
 
 			if ($ignoreLdaps == 'ch')
 			{
-				ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, 0);
+				$tlsCertPolicy = defined('LDAP_OPT_X_TLS_NEVER') ? LDAP_OPT_X_TLS_NEVER : 0;
+				ldap_set_option($ldapconn, LDAP_OPT_X_TLS_REQUIRE_CERT, $tlsCertPolicy);
 			}
 
 			if ($enableTls == 'ch')
 			{
-				ldap_start_tls($ldapconn);
+				if (!@ldap_start_tls($ldapconn))
+				{
+					ldap_close($ldapconn);
+
+					return false;
+				}
 			}
 
 			return $ldapconn;

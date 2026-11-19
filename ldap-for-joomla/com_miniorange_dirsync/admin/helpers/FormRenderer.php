@@ -590,11 +590,11 @@ class FormRenderer
 			$attrString .= ' title="' . htmlspecialchars($config->title) . '"';
 		}
 
-		$rowClasses = 'mo_boot_row mo_boot_mb-3';
+		$rowClasses = 'mo_boot_row mo_boot_mb-3 mo_ldap_form_action_row';
 
 		if (is_array($config->attributes) && isset($config->attributes['mo_boot_col-sm-12']))
 		{
-			$rowClasses = $config->attributes['mo_boot_col-sm-12'];
+			$rowClasses = $config->attributes['mo_boot_col-sm-12'] . ' mo_ldap_form_action_row';
 		}
 
 		$html = '<div class="' . $rowClasses . '">';
@@ -606,7 +606,7 @@ class FormRenderer
 			$html .= '</div>';
 		}
 
-		$html .= '<div class="mo_boot_col-12 mo_boot_col-md-' . $config->layout['field'] . ' mo_boot_d-flex mo_boot_justify-content-center">';
+		$html .= '<div class="mo_boot_col-12 mo_boot_col-md-' . $config->layout['field'] . ' mo_boot_d-flex mo_boot_justify-content-md-start mo_boot_justify-content-center">';
 
 		$disabledClass = $config->disabled ? 'mo_ldap_disabled_input' : '';
 
@@ -654,7 +654,7 @@ class FormRenderer
 	 */
 	private static function buildRowStart(FormFieldConfig $config): string
 	{
-		return '<div class="mo_boot_row mo_boot_col-sm-12 mo_boot_mb-3">';
+		return '<div class="mo_boot_row mo_boot_col-sm-12 mo_boot_mb-3 mo_ldap_form_field_row">';
 	}
 
 	/**
@@ -809,28 +809,38 @@ class FormRenderer
 	// Specialized rendering methods
 	public static function renderPlan($id, $title, $price, $buttonText, $buttonType, $includedFeatures, $notIncludedFeatures, $highlight = false, $buttonUrl = null)
 	{
-		$highlightClass = $highlight ? 'mo_boot_border-warning' : '';
+		$highlightClass = $highlight ? 'mo_ldap_plan_card--highlight' : '';
 
-		$html = '<div class="mo_boot_col-sm-12 mo_boot_col-md-6 mo_boot_col-lg-3 mo_boot_px-2 mo_boot_mb-3">';
-		$html .= '<div class="mo_ldap_mini_section mo_boot_shadow-sm ' . $highlightClass . '">';
-		$html .= '<div class="mo_boot_text-left">';
-		$html .= '<h5 class="mo_boot_fw-medium mo_boot_mb-3">' . htmlspecialchars($title) . '</h5>';
-		$html .= '<h1 class="mo_boot_mb-3">' . htmlspecialchars($price) . '</h1>';
+		$html = '<div class="mo_boot_col-sm-12 mo_boot_col-md-6 mo_boot_col-lg-3 mo_boot_px-2 mo_boot_mb-3 mo_ldap_plan_col">';
+		$html .= '<div class="mo_ldap_mini_section mo_ldap_plan_card mo_boot_shadow-sm ' . $highlightClass . '">';
+		$html .= '<div class="mo_ldap_plan_card_body">';
+		$html .= '<h5 class="mo_ldap_plan_title mo_boot_mb-0">' . htmlspecialchars($title) . '</h5>';
+		$html .= '<div class="mo_ldap_plan_price">' . htmlspecialchars($price) . '</div>';
 
 		if ($buttonType === 'link' && !empty($buttonUrl))
 		{
-			$html .= '<a href="' . htmlspecialchars($buttonUrl) . '" target="_blank" class="mo_boot_btn mo_boot_btn-warning mo_boot_w-100 mo_boot_mb-3 mo_boot_text-decoration-none">' . htmlspecialchars($buttonText) . '</a>';
+			$html .= '<a href="' . htmlspecialchars($buttonUrl) . '" target="_blank" rel="noopener noreferrer" class="mo_boot_btn mo_boot_btn-warning mo_boot_w-100 mo_ldap_plan_cta mo_boot_text-decoration-none">' . htmlspecialchars($buttonText) . '</a>';
 		}
 		else
 		{
-			$html .= '<button class="mo_boot_btn mo_boot_btn-warning mo_boot_w-100 mo_boot_mb-3">' . htmlspecialchars($buttonText) . '</button>';
+			$html .= '<button type="button" class="mo_boot_btn mo_boot_btn-warning mo_boot_w-100 mo_ldap_plan_cta">' . htmlspecialchars($buttonText) . '</button>';
 		}
 
-		$html .= self::renderFeatureBlock($id . '-included', 'Included Features', $includedFeatures, true);
+		$html .= self::renderFeatureBlock(
+			$id . '-included',
+			Text::_('COM_MINIORANGE_PLAN_INCLUDED_FEATURES'),
+			$includedFeatures,
+			true
+		);
 
 		if ($notIncludedFeatures != array())
 		{
-			$html .= self::renderFeatureBlock($id . '-not-included', 'Not-Included Features', $notIncludedFeatures, false);
+			$html .= self::renderFeatureBlock(
+				$id . '-not-included',
+				Text::_('COM_MINIORANGE_PLAN_NOT_INCLUDED_FEATURES'),
+				$notIncludedFeatures,
+				false
+			);
 		}
 
 		$html .= '</div></div></div>';
@@ -841,26 +851,30 @@ class FormRenderer
 	private static function renderFeatureBlock($collapseId, $label, $features, $included = true)
 	{
 		$icon = $included ? 'fa fa-check mo_boot_text-success' : 'fa fa-times mo_boot_text-danger';
-		$btnClass = $included ? 'mo_boot_btn-success' : 'mo_boot_btn-danger';
+		$toggleClass = $included
+			? 'mo_ldap_plan_feature_toggle mo_ldap_plan_feature_toggle--included'
+			: 'mo_ldap_plan_feature_toggle mo_ldap_plan_feature_toggle--excluded';
+		$expanded = $included ? 'true' : 'false';
 
-		$html = '<div class="mo_boot_mb-3">';
-		$html .= "<button class=\"mo_boot_btn {$btnClass} mo_boot_w-100 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#{$collapseId}\">";
-		$html .= "<span><i class=\"{$icon} mo_boot_me-2\"></i>" . htmlspecialchars($label) . '</span>';
-		$html .= '<i class="fa fa-chevron-down mo_ldap_feature_chevron"></i>';
+		$html = '<div class="mo_ldap_plan_feature_block">';
+		$html .= '<button type="button" class="' . $toggleClass . '" data-bs-toggle="collapse" data-bs-target="#' . $collapseId . '" aria-expanded="' . $expanded . '" aria-controls="' . $collapseId . '">';
+		$html .= '<i class="' . $icon . ' mo_boot_me-1" aria-hidden="true"></i>';
+		$html .= '<span class="mo_ldap_plan_feature_toggle_label">' . htmlspecialchars($label) . '</span>';
+		$html .= '<i class="fa fa-chevron-down mo_ldap_feature_chevron mo_boot_ms-1" aria-hidden="true"></i>';
 		$html .= '</button>';
-		$html .= '<div class="collapse' . ($included ? ' show' : '') . ' mo_boot_mt-2" id="' . $collapseId . '">';
-		$html .= '<div class="">';
-
-		$html .= '<ul class="mo_boot_mb-0" style="list-style: none;">';
+		$html .= '<div class="collapse' . ($included ? ' show' : '') . '" id="' . $collapseId . '">';
+		$html .= '<ul class="mo_ldap_plan_feature_list">';
 
 		foreach ($features as $feature)
 		{
-			$html .= '<li class="mo_boot_d-flex mo_boot_align-items-start mo_boot_mb-2" style="text-align: left; justify-content: flex-start;"><i class="' . $icon . ' mo_boot_me-2 mo_boot_mt-1" style="flex-shrink: 0;"></i><span style="text-align: left;">' . htmlspecialchars($feature) . '</span></li>';
+			$html .= '<li class="mo_ldap_plan_feature_item">';
+			$html .= '<i class="' . $icon . '" aria-hidden="true"></i>';
+			$html .= '<span>' . htmlspecialchars($feature) . '</span>';
+			$html .= '</li>';
 		}
 
 		$html .= '</ul>';
-
-		$html .= '</div></div></div>';
+		$html .= '</div></div>';
 
 		return $html;
 	}

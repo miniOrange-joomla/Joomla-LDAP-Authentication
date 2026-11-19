@@ -23,7 +23,7 @@ require_once JPATH_COMPONENT . '/helpers/mo_ldap_constants.php';
 
 // Access check.
 $app = Factory::getApplication();
-$user = $app->getIdentity();
+$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 if (!$user->authorise('core.manage', 'com_miniorange_dirsync'))
 {

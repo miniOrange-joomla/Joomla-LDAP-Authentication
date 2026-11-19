@@ -128,6 +128,10 @@ class MoConstants
 	 */
 	const LDAP_VIDEO_SETUP_GUIDE = 'https://www.youtube.com/watch?v=Nt4fcIHeZyw';
 	/**
+	 * miniOrange Joomla sandbox trial signup
+	 */
+	const JOOMLA_SANDBOX_TRIAL_URL = 'https://playground.miniorange.com/joomla.php';
+	/**
 	 * NTLM SSO Setup Guide
 	 */
 	const NTLM_SSO_SETUP_GUIDE = self::MINIORANGE_DOCS_BASE . '/guide-to-setup-kerberos-single-sign-sso';
@@ -307,6 +311,7 @@ class MoConstants
 	{
 		require_once self::HELPER_PATH . 'MoLdapLogger.php';
 		require_once self::HELPER_PATH . 'FormRenderer.php';
+		require_once self::HELPER_PATH . 'mo_ldap_utility.php';
 	}
 
 	/*

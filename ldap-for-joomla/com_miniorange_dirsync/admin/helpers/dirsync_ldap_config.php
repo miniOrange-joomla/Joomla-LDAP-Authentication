@@ -233,7 +233,8 @@ class MoLdapConfig
 		{
 			$searchFilter = $ldapServer->getSearchFilter();
 			$searchFilter = '(&(' . $searchFilter . '=?)(|(objectClass=user)(objectClass=person)))';
-			$filter = str_replace('?', $username, $searchFilter);
+			$filterName = ldap_escape($username, '', LDAP_ESCAPE_FILTER);
+			$filter = str_replace('?', $filterName, $searchFilter);
 			$userSearchResult = null;
 			$entry = null;
 			$info = null;
@@ -426,12 +427,18 @@ class MoLdapConfig
 
 		if ($ignoreLdaps == "ch")
 		{
-			ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, 0);
+			$tlsCertPolicy = defined('LDAP_OPT_X_TLS_NEVER') ? LDAP_OPT_X_TLS_NEVER : 0;
+			ldap_set_option($ldapconn, LDAP_OPT_X_TLS_REQUIRE_CERT, $tlsCertPolicy);
 		}
 
 		if ($tlsConnection == 'ch')
 		{
-			ldap_start_tls($ldapconn);
+			if (!@ldap_start_tls($ldapconn))
+			{
+				ldap_close($ldapconn);
+
+				return false;
+			}
 		}
 
 		return $ldapconn;
@@ -457,7 +464,8 @@ class MoLdapConfig
 		{
 			$searchFilter = $ldapServer->getSearchFilter();
 			$searchFilter = '(&(objectClass=*)(' . $searchFilter . '=?))';
-			$filter = str_replace('?', $username, $searchFilter);
+			$filterName = ldap_escape($username, '', LDAP_ESCAPE_FILTER);
+			$filter = str_replace('?', $filterName, $searchFilter);
 			$userSearchResult = null;
 			$entry = null;
 			$info = null;

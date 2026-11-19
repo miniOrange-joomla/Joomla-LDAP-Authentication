@@ -39,7 +39,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	public function moLdapSavelogin()
 	{
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// CHECKING THE USER PERMISSIONS
 		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -86,7 +86,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	public function toggleLogger()
 	{
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// Check user permissions
 		if (!$user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -131,6 +131,11 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	 */
 	public function resetLogs(): void
 	{
+		if (!$this->requireEditPostWithToken())
+		{
+			return;
+		}
+
 		$db = MoDatabaseHelper::getDb();
 
 		$query = $db->getQuery(true)
@@ -216,7 +221,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	public function moLdapAttributeMapping()
 	{
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// CHECKING THE USER PERMISSIONS
 		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -318,7 +323,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 		$post = MoLdapUtility::moLdapGetApplicationInput($app)->post->getArray();
 		$validatefilter = InputFilter::getInstance();
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// CHECKING THE USER PERMISSIONS
 		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -359,7 +364,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 		$post = MoLdapUtility::moLdapGetApplicationInput($app)->post->getArray();
 		$validatefilter = InputFilter::getInstance();
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// CHECKING THE USER PERMISSIONS
 		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -395,7 +400,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	public function moLdapSaveRolemapping()
 	{
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// CHECKING THE USER PERMISSIONS
 		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -434,7 +439,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	{
 		$validatefilter = InputFilter::getInstance();
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// CHECKING THE USER PERMISSIONS
 		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -513,15 +518,33 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 				return;
 			}
 
-			if (empty($serviceAccountDn) || empty($serviceAccountPassword))
+			$existingConfig = MoLdapUtility::moLdapFetchData('#__miniorange_dirsync_config', array('id' => '1'), 'loadAssoc');
+			$storedServicePassword = isset($existingConfig['service_account_password']) ? $existingConfig['service_account_password'] : '';
+
+			if (empty($serviceAccountDn))
 			{
 				$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration', Text::_('COM_MINIORANGE_FILL_SERVICE_ACCOUNT_DETAILS'), 'error');
 
 				return;
 			}
 
+			if ($serviceAccountPassword === '' || $serviceAccountPassword === null)
+			{
+				if (empty($storedServicePassword))
+				{
+					$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration', Text::_('COM_MINIORANGE_FILL_SERVICE_ACCOUNT_DETAILS'), 'error');
+
+					return;
+				}
+
+				$serviceAccountPassword = $storedServicePassword;
+			}
+			else
+			{
+				$serviceAccountPassword = MoLdapUtility::moLdapEncrypt($serviceAccountPassword);
+			}
+
 			$serviceAccountDn = MoLdapUtility::moLdapEncrypt($serviceAccountDn);
-			$serviceAccountPassword = MoLdapUtility::moLdapEncrypt($serviceAccountPassword);
 			$status = MoLdapConfig::moLdapPingLdapServer($ldapServerUrl, $serviceAccountDn, $serviceAccountPassword, $ignoreLdaps, $enableTls);
 
 			if ("SUCCESS" !== $status)
@@ -575,6 +598,11 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	 */
 	public function resetLdapSettings(): void
 	{
+		if (!$this->requireEditPostWithToken())
+		{
+			return;
+		}
+
 		// Get the database object
 		$db = MoDatabaseHelper::getDb();
 
@@ -628,7 +656,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	{
 		$validatefilter = InputFilter::getInstance();
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// CHECKING THE USER PERMISSIONS
 		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -673,28 +701,26 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 
 	public function moLdapTestAttributeMapping()
 	{
-		$app = Factory::getApplication();
-		$user = $app->getIdentity();
-
-		// CHECKING THE USER PERMISSIONS
-		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
+		if (!$this->requireEditPostWithToken())
 		{
-			$result = MoLdapUtility::moLdapFetchData('#__miniorange_dirsync_config', array('id' => '1'), 'loadAssoc');
+			return;
+		}
 
-			if (empty($result['search_base']) || empty($result['search_filter']))
-			{
-				$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration', Text::_('COM_MINIORANGE_FILL_SEARCH_BASE_SEARCH_FILTER'), 'error');
+		$app = Factory::getApplication();
 
-				return;
-			}
+		$result = MoLdapUtility::moLdapFetchData('#__miniorange_dirsync_config', array('id' => '1'), 'loadAssoc');
+
+		if (empty($result['search_base']) || empty($result['search_filter']))
+		{
+			$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration', Text::_('COM_MINIORANGE_FILL_SEARCH_BASE_SEARCH_FILTER'), 'error');
+
+			return;
+		}
 
 			$searchBase = MoLdapUtility::moLdapDecrypt($result['search_base']);
-			$get = Factory::getApplication();
-			$post = MoLdapUtility::moLdapGetApplicationInput($get)->post->getArray();
-
-			$input = MoLdapUtility::moLdapGetApplicationInput($get);
-			$username = trim($input->getString('test_attribute_username', ''));
-			$password = $input->getString('test_attribute_password', '');
+			$input = MoLdapUtility::moLdapGetApplicationInput($app);
+			$username = trim($input->post->getString('test_attribute_username', $input->post->getString('test_username', '')));
+			$password = $input->post->getString('test_attribute_password', $input->post->getString('test_password', ''));
 
 			// Simple styling using existing plugin patterns
 			echo '<style>
@@ -708,171 +734,171 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 			.search-input {width: 100%; max-width: 400px; padding: 8px; margin: 20px auto; display: block; border: 1px solid #ddd;}
 		</style>';
 
-			if (empty($username) || empty($password))
-			{
-				echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
+		if (empty($username) || empty($password))
+		{
+			echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
 				  <div class="mo_ldap_test_unsuccessful_details">' . Text::_('COM_MINIORANGE_USERNAME_PASSWORD_REQUIRED') . '</div>';
-				exit;
-			}
+			exit;
+		}
 
 			$authResponse = MoLdapConfig::moLdapAuthenticateUser(trim($username), $password);
 
-			if ($authResponse->statusMessage == "USER_NOT_EXIST")
-			{
-				echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
+		if ($authResponse->statusMessage == "USER_NOT_EXIST")
+		{
+			echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
 				  <div class="mo_ldap_test_unsuccessful_details">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS1') . htmlspecialchars($username) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS2') . htmlspecialchars($username) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS3') . htmlspecialchars($result['search_filter']) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS4') . htmlspecialchars($searchBase) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS5') . '</div>';
-				exit;
-			}
-			elseif ($authResponse->statusMessage == "BAD_SEARCH_FILTER")
-			{
-				echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
+			exit;
+		}
+		elseif ($authResponse->statusMessage == "BAD_SEARCH_FILTER")
+		{
+			echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
 				  <div class="mo_ldap_test_unsuccessful_details">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_CHECK_USERNAME1') . htmlspecialchars($username) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_CHECK_USERNAME2') . '</div>';
-				exit;
-			}
-			elseif ($authResponse->statusMessage == "LDAP_NOT_RESPONDING")
-			{
-				echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
+			exit;
+		}
+		elseif ($authResponse->statusMessage == "LDAP_NOT_RESPONDING")
+		{
+			echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
 				  <div class="mo_ldap_test_unsuccessful_details">' . Text::_('COM_MINIORANGE_LDAP_NOT_RESPONDING') . '</div>';
-				exit;
-			}
-			elseif ($authResponse->statusMessage == "USER_PASSWORD_DOESNTMATCH")
-			{
-				echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
+			exit;
+		}
+		elseif ($authResponse->statusMessage == "USER_PASSWORD_DOESNTMATCH")
+		{
+			echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
 				  <div class="mo_ldap_test_unsuccessful_details">' . Text::_('COM_MINIORANGE_PASSWORD_MISMATCH') . '</div>';
-				exit;
-			}
-			elseif ($authResponse->statusMessage == "SUCCESS")
+			exit;
+		}
+		elseif ($authResponse->statusMessage == "SUCCESS")
+		{
+			// Success - Display attributes
+			error_reporting(E_ERROR | E_PARSE);
+
+			// Get user attributes after successful authentication
+			$userAttributes = MoLdapConfig::moLdapGetUserDetails(trim($username));
+
+			if ($userAttributes && is_array($userAttributes) && isset($userAttributes[0]))
 			{
-				// Success - Display attributes
-				error_reporting(E_ERROR | E_PARSE);
+				$authResponse->attributeList = $userAttributes[0];
+			}
+			else
+			{
+				$authResponse->attributeList = array();
+			}
 
-				// Get user attributes after successful authentication
-				$userAttributes = MoLdapConfig::moLdapGetUserDetails(trim($username));
+			$attributeList = array();
+			$filteredAttributes = array();
 
-				if ($userAttributes && is_array($userAttributes) && isset($userAttributes[0]))
+			foreach ($authResponse->attributeList as $attribute => $value)
+			{
+				if (is_numeric($attribute) || $attribute === 'count')
 				{
-					$authResponse->attributeList = $userAttributes[0];
-				}
-				else
-				{
-					$authResponse->attributeList = array();
-				}
-
-				$attributeList = array();
-				$filteredAttributes = array();
-
-				foreach ($authResponse->attributeList as $attribute => $value)
-				{
-					if (is_numeric($attribute) || $attribute === 'count')
-					{
-						continue;
-					}
-
-					array_push($attributeList, $attribute);
-					$filteredAttributes[$attribute] = MoLdapUtility::formatLdapAttributeValue($attribute, $value);
+					continue;
 				}
 
-				$totalAttributes = count($filteredAttributes);
+				array_push($attributeList, $attribute);
+				$filteredAttributes[$attribute] = MoLdapUtility::formatLdapAttributeValue($attribute, $value);
+			}
 
-				echo '<div class="mo_ldap_attr_success_message">' . Text::_('COM_MINIORANGE_TEST_SUCCESSFUL') . '</div>';
+			$totalAttributes = count($filteredAttributes);
 
-				if (UserHelper::getUserId($username) == 0)
-				{
-					echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS6') . '</div>';
-				}
+			echo '<div class="mo_ldap_attr_success_message">' . Text::_('COM_MINIORANGE_TEST_SUCCESSFUL') . '</div>';
 
-				echo '<input type="text" class="search-input" id="attributeSearch" placeholder="Search attributes..." onkeyup="filterAttributes()">';
+			if (UserHelper::getUserId($username) == 0)
+			{
+				echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS6') . '</div>';
+			}
 
-				echo '<table id="attributeTable">
+			echo '<input type="text" class="search-input" id="attributeSearch" placeholder="Search attributes..." onkeyup="filterAttributes()">';
+
+			echo '<table id="attributeTable">
 				<tr>
 					<th style="width: 30%;">' . Text::_('COM_MINIORANGE_ATTRIBUTE_NAME') . '</th>
 					<th style="width: 70%;">' . Text::_('COM_MINIORANGE_ATTRIBUTE_VALUE') . '</th>
 				</tr>';
 
-				foreach ($filteredAttributes as $attribute => $value)
+			foreach ($filteredAttributes as $attribute => $value)
+			{
+				if ($attribute === 'dn')
 				{
-					if ($attribute === 'dn')
+					continue;
+				}
+
+				echo '<tr class="attribute-row" data-attribute="' . strtolower($attribute) . '">';
+				echo '<td><strong>' . htmlspecialchars($attribute) . '</strong></td>';
+				echo '<td>';
+
+				if ($attribute == 'thumbnailphoto' && !empty($value))
+				{
+					$thumbValue = is_array($value) ? ($value[0] ?? '') : $value;
+					echo '<img src="' . htmlspecialchars($value) . '" style="max-width: 60px; max-height: 60px; border-radius: 50%;" alt="User thumbnail">';
+				}
+				elseif ($attribute == 'memberOf' && is_array($value) && $value != "not available")
+				{
+					// Extract actual group values from LDAP array structure
+					$actualGroups = array();
+
+					for ($i = 0; $i < $value['count']; $i++)
 					{
-						continue;
+						if (isset($value[$i]))
+						{
+							$actualGroups[] = $value[$i];
+						}
 					}
 
-					echo '<tr class="attribute-row" data-attribute="' . strtolower($attribute) . '">';
-					echo '<td><strong>' . htmlspecialchars($attribute) . '</strong></td>';
-					echo '<td>';
+					echo '<strong>Group Memberships (' . count($actualGroups) . '):</strong><br>';
 
-					if ($attribute == 'thumbnailphoto' && !empty($value))
+					foreach ($actualGroups as $group)
 					{
-						$thumbValue = is_array($value) ? ($value[0] ?? '') : $value;
-						echo '<img src="' . htmlspecialchars($value) . '" style="max-width: 60px; max-height: 60px; border-radius: 50%;" alt="User thumbnail">';
+						echo '• ' . htmlspecialchars($group) . '<br>';
 					}
-					elseif ($attribute == 'memberOf' && is_array($value) && $value != "not available")
+				}
+				elseif (is_array($value))
+				{
+					// Extract actual values from LDAP array structure
+					$actualValues = array();
+
+					for ($i = 0; $i < $value['count']; $i++)
 					{
-						// Extract actual group values from LDAP array structure
-						$actualGroups = array();
-
-						for ($i = 0; $i < $value['count']; $i++)
+						if (isset($value[$i]))
 						{
-							if (isset($value[$i]))
-							{
-								$actualGroups[] = $value[$i];
-							}
-						}
-
-						echo '<strong>Group Memberships (' . count($actualGroups) . '):</strong><br>';
-
-						foreach ($actualGroups as $group)
-						{
-							echo '• ' . htmlspecialchars($group) . '<br>';
+							$actualValues[] = $value[$i];
 						}
 					}
-					elseif (is_array($value))
+
+					if (count($actualValues) > 1)
 					{
-						// Extract actual values from LDAP array structure
-						$actualValues = array();
+						echo '<strong>Multiple Values (' . count($actualValues) . '):</strong><br>';
 
-						for ($i = 0; $i < $value['count']; $i++)
+						foreach ($actualValues as $index => $val)
 						{
-							if (isset($value[$i]))
-							{
-								$actualValues[] = $value[$i];
-							}
+							echo '<strong>Value ' . ($index + 1) . ':</strong> ' . htmlspecialchars($val) . '<br>';
 						}
-
-						if (count($actualValues) > 1)
-						{
-							echo '<strong>Multiple Values (' . count($actualValues) . '):</strong><br>';
-
-							foreach ($actualValues as $index => $val)
-							{
-								echo '<strong>Value ' . ($index + 1) . ':</strong> ' . htmlspecialchars($val) . '<br>';
-							}
-						}
-						elseif (count($actualValues) == 1)
-						{
-							echo htmlspecialchars($actualValues[0]);
-						}
-						else
-						{
-							echo 'No values';
-						}
+					}
+					elseif (count($actualValues) == 1)
+					{
+						echo htmlspecialchars($actualValues[0]);
 					}
 					else
 					{
-						echo htmlspecialchars($value);
+						echo 'No values';
 					}
-
-					echo '</td>';
-					echo '</tr>';
+				}
+				else
+				{
+					echo htmlspecialchars($value);
 				}
 
-				echo '</table>';
+				echo '</td>';
+				echo '</tr>';
+			}
 
-				echo '<div id="noResults" style="display: none; text-align: center; padding: 20px; color: #666; font-style: italic;">
+			echo '</table>';
+
+			echo '<div id="noResults" style="display: none; text-align: center; padding: 20px; color: #666; font-style: italic;">
 				No attributes found matching your search.
 			  </div>';
 
-				// Simple JavaScript for search functionality
-				echo '<script>
+			// Simple JavaScript for search functionality
+			echo '<script>
 				function filterAttributes() {
 					const searchTerm = document.getElementById("attributeSearch").value.toLowerCase();
 					const rows = document.querySelectorAll(".attribute-row");
@@ -895,318 +921,327 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 				}
 			  </script>';
 
-				$adUserDetails = array_map('MoLdapUtility::convertBinaryToString', $authResponse->attributeList ? $authResponse->attributeList : array());
-				$adDateInJson = json_encode($adUserDetails, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE);
-				$userDetails = array();
-				$userDetails['Name'] = $username;
-				$userDetails['Details'] = ($adDateInJson);
+			$adUserDetails = array_map('MoLdapUtility::convertBinaryToString', $authResponse->attributeList ? $authResponse->attributeList : array());
+			$adDateInJson = json_encode($adUserDetails, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE);
+			$userDetails = array();
+			$userDetails['Name'] = $username;
+			$userDetails['Details'] = ($adDateInJson);
 
-				$databaseName = '#__miniorange_dirsync_config';
-				$updatefieldsarray = array(
-					'ad_attribute_list' => json_encode($attributeList),
-					'ldap_login' => 'ch',
-					'test_config_details' => json_encode($userDetails),
-				);
-				MoLdapUtility::moLdapUpdateData($databaseName, $updatefieldsarray, array('id' => '1'));
-				exit;
-			}
-			else
-			{
-				echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
+			$databaseName = '#__miniorange_dirsync_config';
+			$updatefieldsarray = array(
+			'ad_attribute_list' => json_encode($attributeList),
+			'ldap_login' => 'ch',
+			'test_config_details' => json_encode($userDetails),
+			);
+			MoLdapUtility::moLdapUpdateData($databaseName, $updatefieldsarray, array('id' => '1'));
+			exit;
+		}
+		else
+		{
+			echo '<div class="mo_ldap_test_unsuccessful">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL') . '</div>
 				  <div class="mo_ldap_test_unsuccessful_details">' . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS1') . htmlspecialchars($username) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS2') . htmlspecialchars($username) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS3') . htmlspecialchars($result['search_filter']) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS4') . htmlspecialchars($searchBase) . Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL_DETAILS5') . '</div>';
-				exit;
-			}
+			exit;
 		}
 	}
 
 	public function attributeMappingResults()
 	{
+		if (!$this->requireEditPostWithToken())
+		{
+			return;
+		}
+
 		$validatefilter = InputFilter::getInstance();
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$moLdapServerDetails = new MoLdapConstants;
+		$usernameAttr = $moLdapServerDetails->getUsernameAttribute();
+		$emailAttr = $moLdapServerDetails->getEmailAttribute();
+		$nameAttr = $moLdapServerDetails->getNameAttribute();
+		$userFieldAttributes = $moLdapServerDetails->getFieldAttributes();
+		$userProfileAttributes = $moLdapServerDetails->getProfileAttributes();
 
-		// CHECKING THE USER PERMISSIONS
-		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
+		if (empty($moLdapServerDetails->getSearchBase()) || empty($moLdapServerDetails->getSearchFilter()))
 		{
-			$moLdapServerDetails = new MoLdapConstants;
-			$usernameAttr = $moLdapServerDetails->getUsernameAttribute();
-			$emailAttr = $moLdapServerDetails->getEmailAttribute();
-			$nameAttr = $moLdapServerDetails->getNameAttribute();
-			$userFieldAttributes = $moLdapServerDetails->getFieldAttributes();
-			$userProfileAttributes = $moLdapServerDetails->getProfileAttributes();
+			$message = Text::_('COM_MINIORANGE_FILL_SEARCH_BASE_SEARCH_FILTER');
+			$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration', $message, 'error');
 
-			if (empty($moLdapServerDetails->getSearchBase()) || empty($moLdapServerDetails->getSearchFilter()))
-			{
-				$message = Text::_('COM_MINIORANGE_FILL_SEARCH_BASE_SEARCH_FILTER');
-				$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration', $message, 'error');
+			return;
+		}
 
-				return;
-			}
+		$post = MoLdapUtility::moLdapGetApplicationInput($app)->post->getArray();
 
-			$get = MoLdapUtility::moLdapGetApplicationInput()->get->getArray();
+		$username = isset($post['test_attribute_username']) ? $validatefilter->clean($post['test_attribute_username'], 'string') : '';
 
-			$username = isset($get['test_attribute_username']) ? $validatefilter->clean($get['test_attribute_username'], 'string') : '';
-			$password = isset($get['test_attribute_password']) ? $get['test_attribute_password'] : '';
+		if ($username === '' && isset($post['test_username']))
+		{
+			$username = $validatefilter->clean($post['test_username'], 'string');
+		}
 
-			if (empty($username) || empty($password))
-			{
-				$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=attributerolemapping', Text::_('COM_MINIORANGE_USERNAME_PASSWORD_REQUIRED'), 'error');
+		$password = isset($post['test_attribute_password']) ? $post['test_attribute_password'] : '';
 
-				return;
-			}
+		if ($password === '' && isset($post['test_password']))
+		{
+			$password = $post['test_password'];
+		}
 
-			$authResponse = MoLdapConfig::moLdapAuthenticateUser(trim($username), $password);
-			?>
-			<style>.mo_ldap_test_premium_features{font-weight:bold;border:2px solid #949090;padding:2%;}
-			.mo_ldap_test_unsuccessful{color:white;background-color: #e06d6d;padding:2%;margin-bottom:20px;text-align:center; border:1px solid #AEDB9A; font-size:18pt;}
-			.mo_ldap_test_unsuccessful_message{margin-left:10px;padding:10px;border: 1px solid black;}
-			</style>
-			<?php
-			if ($authResponse->statusMessage == "USER_NOT_EXIST")
-			{
-				$searchBase = $moLdapServerDetails->getSearchBase();
-				$searchFilter = $moLdapServerDetails->getSearchFilter();
-				$message = Text::_('COM_MINIORANGE_CANNOT_FIND_USER1') . $username . Text::_('COM_MINIORANGE_CANNOT_FIND_USER2') . $searchBase . Text::_('COM_MINIORANGE_CANNOT_FIND_USER3') . $searchFilter . Text::_('COM_MINIORANGE_CANNOT_FIND_USER4') . $searchBase . Text::_('COM_MINIORANGE_CANNOT_FIND_USER5');
-				?><div class="mo_ldap_test_unsuccessful"><?php echo Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL');?></div>
+		if (empty($username) || empty($password))
+		{
+			$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=attributerolemapping', Text::_('COM_MINIORANGE_USERNAME_PASSWORD_REQUIRED'), 'error');
 
-			<div class="mo_ldap_test_unsuccessful_message">
-				<?php echo $message;?>
-			</div><?php
-				exit;
-			}
-			elseif ($authResponse->statusMessage == "LDAP_NOT_RESPONDING")
-			{
-				?><div class="mo_ldap_test_unsuccessful"><?php echo Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL');?></div>
+			return;
+		}
 
-			<div class="mo_ldap_test_unsuccessful_message">
-				<?php echo Text::_('COM_MINIORANGE_LDAP_NOT_RESPONDING_CHECK_CONGIG');?>
-			</div><?php
-				exit;
-			}
-			elseif ($authResponse->statusMessage == "USER_PASSWORD_DOESNTMATCH")
-			{
-				?><div class="mo_ldap_test_unsuccessful"><?php echo Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL');?></div>
+		$authResponse = MoLdapConfig::moLdapAuthenticateUser(trim($username), $password);
+		?>
+		<style>.mo_ldap_test_premium_features{font-weight:bold;border:2px solid #949090;padding:2%;}
+		.mo_ldap_test_unsuccessful{color:white;background-color: #e06d6d;padding:2%;margin-bottom:20px;text-align:center; border:1px solid #AEDB9A; font-size:18pt;}
+		.mo_ldap_test_unsuccessful_message{margin-left:10px;padding:10px;border: 1px solid black;}
+		</style>
+		<?php
+		if ($authResponse->statusMessage == "USER_NOT_EXIST")
+		{
+			$searchBase = $moLdapServerDetails->getSearchBase();
+			$searchFilter = $moLdapServerDetails->getSearchFilter();
+			$message = Text::_('COM_MINIORANGE_CANNOT_FIND_USER1') . htmlspecialchars($username, ENT_QUOTES, 'UTF-8') . Text::_('COM_MINIORANGE_CANNOT_FIND_USER2') . htmlspecialchars($searchBase, ENT_QUOTES, 'UTF-8') . Text::_('COM_MINIORANGE_CANNOT_FIND_USER3') . htmlspecialchars($searchFilter, ENT_QUOTES, 'UTF-8') . Text::_('COM_MINIORANGE_CANNOT_FIND_USER4') . htmlspecialchars($searchBase, ENT_QUOTES, 'UTF-8') . Text::_('COM_MINIORANGE_CANNOT_FIND_USER5');
+			?><div class="mo_ldap_test_unsuccessful"><?php echo Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL');?></div>
 
-			<div class="mo_ldap_test_unsuccessful_message">
-				<?php echo Text::_('COM_MINIORANGE_PASSWORD_MISMATCH');?>
-			</div><?php
-				exit;
-			}
-			elseif ($authResponse->statusMessage == "SUCCESS")
-			{
-				$moLdapUserAttributes = MoLdapConfig::moLdapGetUserDetails($username);
+		<div class="mo_ldap_test_unsuccessful_message">
+			<?php echo $message;?>
+		</div><?php
+			exit;
+		}
+		elseif ($authResponse->statusMessage == "LDAP_NOT_RESPONDING")
+		{
+			?><div class="mo_ldap_test_unsuccessful"><?php echo Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL');?></div>
 
-				echo "<div style='color: #3c763d;	background-color: #dff0d8;text-align:center; border:1px solid #AEDB9A;'><h3>" . Text::_('COM_MINIORANGE_TEST_USER_ATTRIBUTE_MAPPING_DETAILS') . "</h3></div>
-				<div class='mo_boot_mx-4'>
-					<p><strong>" . Text::_('COM_MINIORANGE_TEST_USER_ATTRIBUTE_MAPPING_SUCCESSFULLY_AUTHENTICATED') . " <span style='color:red'>" . $username . "</span></strong></p>
-					<br>" . Text::_('COM_MINIORANGE_TEST_USER_LOGIN_ATTRIBUTE_MAPPING_DETAILS') . "
-					<table style='width:80%;margin:auto;text-align:center'>
-						<tr style='text-align:center;'>
-							<th style='font-weight:bold;border:2px solid #949090;padding:2%;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_LOGIN_ATTRIBUTE_NAME') . "</th>
-							<th style='font-weight:bold;padding:2%;border:2px solid #949090; word-wrap:break-word;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_LOGIN_ATTRIBUTE_VALUE') . "</th>
-						</tr>";
+		<div class="mo_ldap_test_unsuccessful_message">
+			<?php echo Text::_('COM_MINIORANGE_LDAP_NOT_RESPONDING_CHECK_CONGIG');?>
+		</div><?php
+			exit;
+		}
+		elseif ($authResponse->statusMessage == "USER_PASSWORD_DOESNTMATCH")
+		{
+			?><div class="mo_ldap_test_unsuccessful"><?php echo Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL');?></div>
 
-				if (isset($usernameAttr) || isset($nameAttr) || isset($emailAttr))
-				{
-					$username = isset($moLdapUserAttributes[0][$usernameAttr][0]) ? $moLdapUserAttributes[0][$usernameAttr][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
-					$name = isset($moLdapUserAttributes[0][$nameAttr][0]) ? $moLdapUserAttributes[0][$nameAttr][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
-					$email = isset($moLdapUserAttributes[0][$emailAttr][0]) ? $moLdapUserAttributes[0][$emailAttr][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
-					echo "<tr class='mo_ldap_test_premium_features'>
-						<td class='mo_ldap_test_premium_features'>Username</td>
-						<td class='mo_ldap_test_premium_features'>" . $username . "</td>
-						</tr>
-						<tr class='mo_ldap_test_premium_features'>
-						<td class='mo_ldap_test_premium_features'>Name</td>
-						<td class='mo_ldap_test_premium_features'>" . $name . "</td>
-						</tr>
-						<tr class='mo_ldap_test_premium_features'>
-						<td class='mo_ldap_test_premium_features'>Email</td>
-						<td class='mo_ldap_test_premium_features'>" . $email . "</td>
-						</tr>
-						</table><br>";
-				}
+		<div class="mo_ldap_test_unsuccessful_message">
+			<?php echo Text::_('COM_MINIORANGE_PASSWORD_MISMATCH');?>
+		</div><?php
+			exit;
+		}
+		elseif ($authResponse->statusMessage == "SUCCESS")
+		{
+			$moLdapUserAttributes = MoLdapConfig::moLdapGetUserDetails($username);
 
-				echo "<strong class='mo_boot_my-4' >" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_NOTE') . "</strong>
-				<br><br>
-				<div class='mo_boot_my-4' style='color: #black;	background-color: #d8e7f0; text-align:center; border:1px solid #9aa0db;'>
-					<h4>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_PROFILE_ATTRIBUTE') . "</h4>
-				</div>
-				<p>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_PROFILE_ATTRIBUTE_DETAILS') . "</p>
+			echo "<div style='color: #3c763d;	background-color: #dff0d8;text-align:center; border:1px solid #AEDB9A;'><h3>" . Text::_('COM_MINIORANGE_TEST_USER_ATTRIBUTE_MAPPING_DETAILS') . "</h3></div>
+			<div class='mo_boot_mx-4'>
+				<p><strong>" . Text::_('COM_MINIORANGE_TEST_USER_ATTRIBUTE_MAPPING_SUCCESSFULLY_AUTHENTICATED') . " <span style='color:red'>" . htmlspecialchars($username, ENT_QUOTES, 'UTF-8') . "</span></strong></p>
+				<br>" . Text::_('COM_MINIORANGE_TEST_USER_LOGIN_ATTRIBUTE_MAPPING_DETAILS') . "
 				<table style='width:80%;margin:auto;text-align:center'>
 					<tr style='text-align:center;'>
-						<th style='font-weight:bold;border:2px solid #949090;padding:2%;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_PROFILE_ATTRIBUTE_NAME') . "</th>
-						<th style='font-weight:bold;padding:2%;border:2px solid #949090; word-wrap:break-word;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_PROFILE_ATTRIBUTE_VALUE') . "</th>
+						<th style='font-weight:bold;border:2px solid #949090;padding:2%;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_LOGIN_ATTRIBUTE_NAME') . "</th>
+						<th style='font-weight:bold;padding:2%;border:2px solid #949090; word-wrap:break-word;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_LOGIN_ATTRIBUTE_VALUE') . "</th>
 					</tr>";
 
-				if (isset($userProfileAttributes[0]['attr_name']))
-				{
-					$profileValue1 = isset($moLdapUserAttributes[0][$userProfileAttributes[0]['attr_value']][0]) ? $moLdapUserAttributes[0][$userProfileAttributes[0]['attr_value']][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
-					echo "<tr class='mo_ldap_test_premium_features'>
-						<td class='mo_ldap_test_premium_features'>" . $userProfileAttributes[0]['attr_name'] . "</td>
-						<td class='mo_ldap_test_premium_features'>" . $profileValue1 . "</td>
-						</tr>";
+			if (isset($usernameAttr) || isset($nameAttr) || isset($emailAttr))
+			{
+				$username = isset($moLdapUserAttributes[0][$usernameAttr][0]) ? $moLdapUserAttributes[0][$usernameAttr][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
+				$name = isset($moLdapUserAttributes[0][$nameAttr][0]) ? $moLdapUserAttributes[0][$nameAttr][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
+				$email = isset($moLdapUserAttributes[0][$emailAttr][0]) ? $moLdapUserAttributes[0][$emailAttr][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
+				echo "<tr class='mo_ldap_test_premium_features'>
+					<td class='mo_ldap_test_premium_features'>Username</td>
+					<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($username, ENT_QUOTES, 'UTF-8') . "</td>
+					</tr>
+					<tr class='mo_ldap_test_premium_features'>
+					<td class='mo_ldap_test_premium_features'>Name</td>
+					<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . "</td>
+					</tr>
+					<tr class='mo_ldap_test_premium_features'>
+					<td class='mo_ldap_test_premium_features'>Email</td>
+					<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . "</td>
+					</tr>
+					</table><br>";
+			}
 
-					if (isset($userProfileAttributes[1]['attr_name']))
-					{
-						$profileValue2 = isset($moLdapUserAttributes[0][$userProfileAttributes[1]['attr_value']][0]) ? $moLdapUserAttributes[0][$userProfileAttributes[1]['attr_value']][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
-						echo "<tr class='mo_ldap_test_premium_features'>
-							<td class='mo_ldap_test_premium_features'>" . $userProfileAttributes[1]['attr_name'] . "</td>
-							<td class='mo_ldap_test_premium_features'>" . $profileValue2 . "</td>
-							</tr>";
-					}
-				}
-				else
-				{
-					echo "<tr class='mo_ldap_test_premium_features'>
-							<td class='mo_ldap_test_premium_features'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_NOT_CONFIGURED') . "</td>
-							<td class='mo_ldap_test_premium_features'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_NOT_CONFIGURED') . "</td>
-							</tr>";
-				}
+			echo "<strong class='mo_boot_my-4' >" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_NOTE') . "</strong>
+			<br><br>
+			<div class='mo_boot_my-4' style='color: #black;	background-color: #d8e7f0; text-align:center; border:1px solid #9aa0db;'>
+				<h4>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_PROFILE_ATTRIBUTE') . "</h4>
+			</div>
+			<p>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_PROFILE_ATTRIBUTE_DETAILS') . "</p>
+			<table style='width:80%;margin:auto;text-align:center'>
+				<tr style='text-align:center;'>
+					<th style='font-weight:bold;border:2px solid #949090;padding:2%;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_PROFILE_ATTRIBUTE_NAME') . "</th>
+					<th style='font-weight:bold;padding:2%;border:2px solid #949090; word-wrap:break-word;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_PROFILE_ATTRIBUTE_VALUE') . "</th>
+				</tr>";
 
-				echo "
-				</table><br>
-				<div class='mo_boot_my-4' style='color: black;background-color: #d8e7f0; text-align:center; border:1px solid #9aa0db;'>
-					<h4>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_FIELD_ATTRIBUTE') . "</h4>
-				</div>
-				<p>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_FIELD_ATTRIBUTE_DETAILS') . "</p>
-				<table style='width:80%;margin:auto;text-align:center'>
-					<tr style='text-align:center;'>
-						<th style='font-weight:bold;border:2px solid #949090;padding:2%;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_FIELD_ATTRIBUTE_NAME') . "</th>
-						<th style='font-weight:bold;padding:2%;border:2px solid #949090; word-wrap:break-word;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_FIELD_ATTRIBUTE_VALUE') . "</th>
+			if (isset($userProfileAttributes[0]['attr_name']))
+			{
+				$profileValue1 = isset($moLdapUserAttributes[0][$userProfileAttributes[0]['attr_value']][0]) ? $moLdapUserAttributes[0][$userProfileAttributes[0]['attr_value']][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
+				echo "<tr class='mo_ldap_test_premium_features'>
+					<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($userProfileAttributes[0]['attr_name'], ENT_QUOTES, 'UTF-8') . "</td>
+					<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($profileValue1, ENT_QUOTES, 'UTF-8') . "</td>
 					</tr>";
 
-				if (isset($userFieldAttributes[0]['attr_name']))
+				if (isset($userProfileAttributes[1]['attr_name']))
 				{
-					$fieldValue1 = isset($moLdapUserAttributes[0][$userFieldAttributes[0]['attr_value']][0]) ? $moLdapUserAttributes[0][$userFieldAttributes[0]['attr_value']][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
+					$profileValue2 = isset($moLdapUserAttributes[0][$userProfileAttributes[1]['attr_value']][0]) ? $moLdapUserAttributes[0][$userProfileAttributes[1]['attr_value']][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
 					echo "<tr class='mo_ldap_test_premium_features'>
-						<td class='mo_ldap_test_premium_features'>" . $userFieldAttributes[0]['attr_name'] . "</td>
-						<td class='mo_ldap_test_premium_features'>" . $fieldValue1 . "</td>
-						</tr>";
-
-					if (isset($userFieldAttributes[1]['attr_name']))
-					{
-						$fieldValue2 = isset($moLdapUserAttributes[0][$userFieldAttributes[1]['attr_value']][0]) ? $moLdapUserAttributes[0][$userFieldAttributes[1]['attr_value']][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
-						echo "<tr class='mo_ldap_test_premium_features'>
-							<td class='mo_ldap_test_premium_features'>" . $userFieldAttributes[1]['attr_name'] . "</td>
-							<td class='mo_ldap_test_premium_features'>" . $fieldValue2 . "</td>
-							</tr>";
-					}
-				}
-				else
-				{
-					echo "<tr class='mo_ldap_test_premium_features'>
-							<td class='mo_ldap_test_premium_features'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_NOT_CONFIGURED') . "</td>
-							<td class='mo_ldap_test_premium_features'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_NOT_CONFIGURED') . "</td>
-							</tr>";
-				}
-
-				echo "</table>
-				<br><br>";
-
-				$moLdapDefaultRole = $moLdapServerDetails->getMappingValueDefault();
-				$moLdapRoleMappingKeyValue = $moLdapServerDetails->getRoleMappingKeyValue();
-				$moLdapRoleMappingGroupvalue = $moLdapServerDetails->getRoleMappingGroupValue();
-
-				$moLdapUserGroupDefined = 'group_not_found';
-				$groupList = array();
-				$moLdapUserGroupValue = array();
-				$moLdapUserBelongsToGroup = array();
-
-				$i = 1;
-
-				if (gettype($moLdapRoleMappingKeyValue) == 'object')
-				{
-					foreach ($moLdapRoleMappingKeyValue as $keys)
-					{
-						if (!empty($moLdapUserAttributes[0]['memberof']))
-						{
-							if (in_array($keys, $moLdapUserAttributes[0]['memberof']))
-							{
-								$moLdapUserGroupDefined = 'group_found';
-								array_push($moLdapUserGroupValue, $moLdapRoleMappingGroupvalue[$i]);
-							}
-						}
-
-						$i++;
-					}
-				}
-
-				if ($moLdapUserGroupDefined == 'group_not_found')
-				{
-					array_push($moLdapUserGroupValue, $moLdapDefaultRole);
-				}
-
-				for ($j = 0; $j < count($moLdapUserGroupValue); $j++)
-				{
-					switch ($moLdapUserGroupValue[$j])
-					{
-						case "2":
-							$moLdapUserBelongsToGroup[$j] = "Registered";
-							array_push($groupList, $moLdapUserBelongsToGroup[$j]);
-							break;
-						case "3":
-							$moLdapUserBelongsToGroup[$j] = "Author";
-							array_push($groupList, $moLdapUserBelongsToGroup[$j]);
-							break;
-						case "4":
-							$moLdapUserBelongsToGroup[$j] = "Editor";
-							array_push($groupList, $moLdapUserBelongsToGroup[$j]);
-							break;
-						case "5":
-							$moLdapUserBelongsToGroup[$j] = "Publisher";
-							array_push($groupList, $moLdapUserBelongsToGroup[$j]);
-							break;
-						case "6":
-							$moLdapUserBelongsToGroup[$j] = "Manager";
-							array_push($groupList, $moLdapUserBelongsToGroup[$j]);
-							break;
-						case "7":
-							$moLdapUserBelongsToGroup[$j] = "Administrator";
-							array_push($groupList, $moLdapUserBelongsToGroup[$j]);
-							break;
-					}
-				}
-
-				echo "<div style='color: black;background-color: #d8e7f0; text-align:center; border:1px solid #9aa0db;'><h3>" . Text::_('COM_MINIORANGE_TEST_GROUP_MAPPING_USER_GROUP_MAPPING_DETAILS') . "</h3></div>
-				<div class='mo_boot_mx-4'>
-					<p><strong>" . Text::_('COM_MINIORANGE_TEST_GROUP_MAPPING_SUCCESSFULLY_AUTHENTICATED') . " <span style='color:red'>" . $username . "</span></strong></p>
-					<br>" . Text::_('COM_MINIORANGE_TEST_GROUP_MAPPING_DETAILS') . "
-
-
-				<table style='width:80%;margin:auto;text-align:center'>
-					<tr style='text-align:center;'>
-						<th style='font-weight:bold;border:2px solid #949090;padding:2%;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_GROUP_MAPPING_JOOMLA_SITE_ROLES') . "</th>
-					</tr>";
-
-				if ($groupList)
-				{
-					for ($i = 0; $i < count($groupList); $i++)
-					{
-						echo "<tr class='mo_ldap_test_premium_features'>
-						<td class='mo_ldap_test_premium_features'>" . $groupList[$i] . "</td>
-						</tr>";
-					}
-				}
-				else
-				{
-					echo "<tr class='mo_ldap_test_premium_features'>
-						<td class='mo_ldap_test_premium_features'>" . Text::_('COM_MINIORANGE_TEST_GROUP_MAPPING_NOT_CONFIGURED') . "</td>
+						<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($userProfileAttributes[1]['attr_name'], ENT_QUOTES, 'UTF-8') . "</td>
+						<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($profileValue2, ENT_QUOTES, 'UTF-8') . "</td>
 						</tr>";
 				}
-
-				echo "</table></div>
-			</div>";
-				exit;
 			}
 			else
 			{
-				?><div class="mo_ldap_test_unsuccessful"><?php echo Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL');?></div>
-
-			<div class="mo_ldap_test_unsuccessful_message">
-				<?php echo Text::_('COM_MINIORANGE_LDAP_NOT_RESPONDING');?>
-			</div><?php
-				exit;
+				echo "<tr class='mo_ldap_test_premium_features'>
+						<td class='mo_ldap_test_premium_features'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_NOT_CONFIGURED') . "</td>
+						<td class='mo_ldap_test_premium_features'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_NOT_CONFIGURED') . "</td>
+						</tr>";
 			}
+
+			echo "
+			</table><br>
+			<div class='mo_boot_my-4' style='color: black;background-color: #d8e7f0; text-align:center; border:1px solid #9aa0db;'>
+				<h4>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_FIELD_ATTRIBUTE') . "</h4>
+			</div>
+			<p>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_FIELD_ATTRIBUTE_DETAILS') . "</p>
+			<table style='width:80%;margin:auto;text-align:center'>
+				<tr style='text-align:center;'>
+					<th style='font-weight:bold;border:2px solid #949090;padding:2%;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_FIELD_ATTRIBUTE_NAME') . "</th>
+					<th style='font-weight:bold;padding:2%;border:2px solid #949090; word-wrap:break-word;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_USER_FIELD_ATTRIBUTE_VALUE') . "</th>
+				</tr>";
+
+			if (isset($userFieldAttributes[0]['attr_name']))
+			{
+				$fieldValue1 = isset($moLdapUserAttributes[0][$userFieldAttributes[0]['attr_value']][0]) ? $moLdapUserAttributes[0][$userFieldAttributes[0]['attr_value']][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
+				echo "<tr class='mo_ldap_test_premium_features'>
+					<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($userFieldAttributes[0]['attr_name'], ENT_QUOTES, 'UTF-8') . "</td>
+					<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($fieldValue1, ENT_QUOTES, 'UTF-8') . "</td>
+					</tr>";
+
+				if (isset($userFieldAttributes[1]['attr_name']))
+				{
+					$fieldValue2 = isset($moLdapUserAttributes[0][$userFieldAttributes[1]['attr_value']][0]) ? $moLdapUserAttributes[0][$userFieldAttributes[1]['attr_value']][0] : Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_RECHECK_VALUE');
+					echo "<tr class='mo_ldap_test_premium_features'>
+						<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($userFieldAttributes[1]['attr_name'], ENT_QUOTES, 'UTF-8') . "</td>
+						<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($fieldValue2, ENT_QUOTES, 'UTF-8') . "</td>
+						</tr>";
+				}
+			}
+			else
+			{
+				echo "<tr class='mo_ldap_test_premium_features'>
+						<td class='mo_ldap_test_premium_features'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_NOT_CONFIGURED') . "</td>
+						<td class='mo_ldap_test_premium_features'>" . Text::_('COM_MINIORANGE_TEST_ATTRIBUTE_MAPPING_NOT_CONFIGURED') . "</td>
+						</tr>";
+			}
+
+			echo "</table>
+			<br><br>";
+
+			$moLdapDefaultRole = $moLdapServerDetails->getMappingValueDefault();
+			$moLdapRoleMappingKeyValue = $moLdapServerDetails->getRoleMappingKeyValue();
+			$moLdapRoleMappingGroupvalue = $moLdapServerDetails->getRoleMappingGroupValue();
+
+			$moLdapUserGroupDefined = 'group_not_found';
+			$groupList = array();
+			$moLdapUserGroupValue = array();
+			$moLdapUserBelongsToGroup = array();
+
+			$i = 1;
+
+			if (gettype($moLdapRoleMappingKeyValue) == 'object')
+			{
+				foreach ($moLdapRoleMappingKeyValue as $keys)
+				{
+					if (!empty($moLdapUserAttributes[0]['memberof']))
+					{
+						if (in_array($keys, $moLdapUserAttributes[0]['memberof']))
+						{
+							$moLdapUserGroupDefined = 'group_found';
+							array_push($moLdapUserGroupValue, $moLdapRoleMappingGroupvalue[$i]);
+						}
+					}
+
+					$i++;
+				}
+			}
+
+			if ($moLdapUserGroupDefined == 'group_not_found')
+			{
+				array_push($moLdapUserGroupValue, $moLdapDefaultRole);
+			}
+
+			for ($j = 0; $j < count($moLdapUserGroupValue); $j++)
+			{
+				switch ($moLdapUserGroupValue[$j])
+				{
+					case "2":
+						$moLdapUserBelongsToGroup[$j] = "Registered";
+						array_push($groupList, $moLdapUserBelongsToGroup[$j]);
+						break;
+					case "3":
+						$moLdapUserBelongsToGroup[$j] = "Author";
+						array_push($groupList, $moLdapUserBelongsToGroup[$j]);
+						break;
+					case "4":
+						$moLdapUserBelongsToGroup[$j] = "Editor";
+						array_push($groupList, $moLdapUserBelongsToGroup[$j]);
+						break;
+					case "5":
+						$moLdapUserBelongsToGroup[$j] = "Publisher";
+						array_push($groupList, $moLdapUserBelongsToGroup[$j]);
+						break;
+					case "6":
+						$moLdapUserBelongsToGroup[$j] = "Manager";
+						array_push($groupList, $moLdapUserBelongsToGroup[$j]);
+						break;
+					case "7":
+						$moLdapUserBelongsToGroup[$j] = "Administrator";
+						array_push($groupList, $moLdapUserBelongsToGroup[$j]);
+						break;
+				}
+			}
+
+			echo "<div style='color: black;background-color: #d8e7f0; text-align:center; border:1px solid #9aa0db;'><h3>" . Text::_('COM_MINIORANGE_TEST_GROUP_MAPPING_USER_GROUP_MAPPING_DETAILS') . "</h3></div>
+			<div class='mo_boot_mx-4'>
+				<p><strong>" . Text::_('COM_MINIORANGE_TEST_GROUP_MAPPING_SUCCESSFULLY_AUTHENTICATED') . " <span style='color:red'>" . htmlspecialchars($username, ENT_QUOTES, 'UTF-8') . "</span></strong></p>
+				<br>" . Text::_('COM_MINIORANGE_TEST_GROUP_MAPPING_DETAILS') . "
+
+
+			<table style='width:80%;margin:auto;text-align:center'>
+				<tr style='text-align:center;'>
+					<th style='font-weight:bold;border:2px solid #949090;padding:2%;background-color:#d5d3cd'>" . Text::_('COM_MINIORANGE_TEST_GROUP_MAPPING_JOOMLA_SITE_ROLES') . "</th>
+				</tr>";
+
+			if ($groupList)
+			{
+				for ($i = 0; $i < count($groupList); $i++)
+				{
+					echo "<tr class='mo_ldap_test_premium_features'>
+					<td class='mo_ldap_test_premium_features'>" . htmlspecialchars($groupList[$i], ENT_QUOTES, 'UTF-8') . "</td>
+					</tr>";
+				}
+			}
+			else
+			{
+				echo "<tr class='mo_ldap_test_premium_features'>
+					<td class='mo_ldap_test_premium_features'>" . Text::_('COM_MINIORANGE_TEST_GROUP_MAPPING_NOT_CONFIGURED') . "</td>
+					</tr>";
+			}
+
+			echo "</table></div>
+		</div>";
+			exit;
+		}
+		else
+		{
+			?><div class="mo_ldap_test_unsuccessful"><?php echo Text::_('COM_MINIORANGE_TEST_UNSUCCESSFUL');?></div>
+
+		<div class="mo_ldap_test_unsuccessful_message">
+			<?php echo Text::_('COM_MINIORANGE_LDAP_NOT_RESPONDING');?>
+		</div><?php
+			exit;
 		}
 	}
 
@@ -1214,7 +1249,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	{
 		$validatefilter = InputFilter::getInstance();
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// CHECKING THE USER PERMISSIONS
 		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -1294,7 +1329,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	public function moLdappsbsearchbases()
 	{
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// CHECKING THE USER PERMISSIONS
 		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -1426,7 +1461,7 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	public function moLdapUpdatesearchbase()
 	{
 		$app = Factory::getApplication();
-		$user = $app->getIdentity();
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
 
 		// CHECKING THE USER PERMISSIONS
 		if ($user->authorise('core.edit', 'com_miniorange_dirsync'))
@@ -1454,7 +1489,15 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 	public function moLdapContactUs()
 	{
 		$app = Factory::getApplication();
-		$post = MoLdapUtility::moLdapGetApplicationInput($app)->post->getArray();
+		$input = MoLdapUtility::moLdapGetApplicationInput($app);
+
+		if ($input->getString('query_type', '') === 'trial' || $input->post->getString('query_type', '') === 'trial')
+		{
+			require_once JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/MoConstants.php';
+			$app->redirect(MoConstants::JOOMLA_SANDBOX_TRIAL_URL);
+		}
+
+		$post = $input->post->getArray();
 		$queryEmail = isset($post['mo_ldap_query_email']) ? $post['mo_ldap_query_email'] : '';
 		$query = isset($post['mo_ldap_query']) ? $post['mo_ldap_query'] : '';
 		$queryType = isset($post['mo_ldap_setup_call_issue']) ? $post['mo_ldap_setup_call_issue'] : '';
@@ -1462,11 +1505,6 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 		if (MoLdapUtility::moLdapCheckEmptyOrNull($queryType))
 		{
 			$queryTypeParam = MoLdapUtility::moLdapGetApplicationInput($app)->getString('query_type', '');
-
-			if ($queryTypeParam === 'trial')
-			{
-				$queryType = Text::_('COM_MINIORANGE_TRIAL_REQUEST');
-			}
 
 			if ($queryTypeParam === 'configuration')
 			{
@@ -1560,84 +1598,13 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 
 	public function moLdapExport()
 	{
-		$ldapServerDetails = MoLdapUtility::moLdapFetchData('#__miniorange_dirsync_config', array('id' => '1'), 'loadAssoc');
-		$ldapServerUrl = $ldapServerDetails['ldap_server_url'];
-		$username = $ldapServerDetails['username'];
-
-		if ($ldapServerUrl == '' && $username == '')
-		{
-			$message = Text::_('COM_MINIORANGE_FILL_ATTRIBUTE_MAPPING_SERVER_URL');
-			$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration', $message, 'error');
-
-			return;
-		}
-
-		foreach ($ldapServerDetails as $key => $value)
-		{
-			if ($key == 'ldap_server_url' || $key == 'service_account_dn' || $key == 'service_account_password' || $key == 'search_base')
-			{
-				$moLdapDecryptedValue = MoLdapUtility::moLdapDecrypt($value);
-				$ldapServerDetails[$key] = $moLdapDecryptedValue;
-			}
-		}
-
-		$ldapGroupMapping = MoLdapUtility::moLdapFetchData('#__miniorange_ldap_role_mapping', array('id' => '1'), 'loadAssoc');
-		$ntlmConfiguration = MoLdapUtility::moLdapFetchData('#__miniorange_ntlm', array('id' => '1'), 'loadAssoc');
-		$pluginConfiguration = array();
-		array_unshift($ldapServerDetails, 'miniorange_dirsync_config');
-		array_unshift($ldapGroupMapping, 'miniorange_ldap_role_mapping');
-		array_unshift($ntlmConfiguration, 'miniorange_ntlm');
-		array_push($pluginConfiguration, $ldapServerDetails, $ldapGroupMapping, $ntlmConfiguration);
-
-		$fileContent = json_encode($pluginConfiguration, JSON_PRETTY_PRINT);
-
-		header('Content-Disposition: attachment; filename=ldap-server.json');
-		header('Content-Type: application/json');
-		echo $fileContent;
-
-		$message = Text::_('COM_MINIORANGE_EXPORT_SUCCESSFUL');
-		$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration', $message);
-		exit;
+		$this->exportConfiguration();
 	}
 
 	public function moLdapRequestForDemo()
 	{
-		$app = Factory::getApplication();
-		$post = MoLdapUtility::moLdapGetApplicationInput($app)->post->getArray();
-
-		if ((!isset($post['email'])) || (!isset($post['plan'])) || (!isset($post['description'])))
-		{
-			$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=mo_ldap_trial_demo');
-
-			return;
-		}
-
-		$email = $post['email'];
-		$plan = $post['plan'];
-		$addOn = $post['add_on'];
-		$description = trim($post['description']);
-		$demo = 'Demo';
-
-		if (!isset($plan) || empty($description))
-		{
-			$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=mo_ldap_trial_demo', Text::_('COM_MINIORANGE_FILL_PLAN_DETAILS_FOR_DEMO'), 'error');
-
-			return;
-		}
-
-		$customer = new MoLdapCustomer;
-		$response = json_decode($customer->moLdapRequestForDemo($email, $plan, $demo, $description, $addOn));
-
-		if ($response->status != 'ERROR')
-		{
-			$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=mo_ldap_trial_demo', Text::_('COM_MINIORANGE_DEMO_REQUEST_RECIEVED_SUCCESSFULLY'));
-		}
-		else
-		{
-			$this->setRedirect('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=mo_ldap_trial_demo', Text::_('COM_MINIORANGE_CONTACT_US_AGAIN'), 'error');
-
-			return;
-		}
+		require_once JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/MoConstants.php';
+		Factory::getApplication()->redirect(MoConstants::JOOMLA_SANDBOX_TRIAL_URL);
 	}
 
 	public function callContactUs()
@@ -1701,21 +1668,10 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 
 	public function exportConfiguration()
 	{
-		$app  = Factory::getApplication();
-		$user = $app->getIdentity();
-
-		if (!$user->authorise('core.edit', 'com_miniorange_dirsync'))
+		if (!$this->requireEditPostWithToken())
 		{
-			$this->setRedirect(
-				'index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=ldapconfiguration',
-				Text::_('COM_MINIORANGE_MULTI_NO_PERMISSION_TO_SAVE'),
-				'error'
-			);
-
 			return;
 		}
-
-		$this->checkToken('request') or jexit(Text::_('JINVALID_TOKEN'));
 
 		$tableNames = array(
 			'#__miniorange_ldap_customer',
@@ -1727,5 +1683,43 @@ class MiniorangeDirsyncControllerAccountsetup extends FormController
 		JLoader::register('MoLdapUtility', JPATH_COMPONENT . '/helpers/mo_ldap_utility.php');
 
 		MoLdapUtility::exportData($tableNames);
+	}
+
+	/**
+	 * Require POST, core.edit permission, and a valid CSRF token for destructive actions.
+	 *
+	 * @return boolean
+	 */
+	protected function requireEditPostWithToken(): bool
+	{
+		$app = Factory::getApplication();
+
+		if (strtoupper(MoLdapUtility::moLdapGetApplicationInput($app)->getMethod()) !== 'POST')
+		{
+			$this->setRedirect(
+				'index.php?option=com_miniorange_dirsync&view=accountsetup',
+				Text::_('JINVALID_TOKEN'),
+				'error'
+			);
+
+			return false;
+		}
+
+		$user = MoLdapUtility::moLdapGetApplicationUser($app);
+
+		if (!$user->authorise('core.edit', 'com_miniorange_dirsync'))
+		{
+			$this->setRedirect(
+				'index.php?option=com_miniorange_dirsync&view=accountsetup',
+				Text::_('COM_MINIORANGE_MULTI_NO_PERMISSION_TO_SAVE'),
+				'error'
+			);
+
+			return false;
+		}
+
+		$this->checkToken('request') or jexit(Text::_('JINVALID_TOKEN'));
+
+		return true;
 	}
 }

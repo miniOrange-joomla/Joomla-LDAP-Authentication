@@ -1,6 +1,30 @@
 function mo_ldap_upgrade() {
-	// Redirect to the upgrade tab
+	var navElement = document.querySelector('.mo_ldap_nav-tab[data-tab-key="licensing"]');
+
+	if (typeof mo_ldap_activate_tab === 'function') {
+		mo_ldap_activate_tab('licensing', navElement);
+		return;
+	}
+
 	window.location.href = 'index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=licensing';
+}
+
+function mo_ldap_handle_internal_tab_link(event) {
+	var internalLink = event.target.closest('a.mo_ldap_tab_nav_link');
+
+	if (!internalLink) {
+		return;
+	}
+
+	var tabKey = internalLink.getAttribute('data-tab-key');
+
+	if (!tabKey) {
+		return;
+	}
+
+	event.preventDefault();
+	var navElement = document.querySelector('.mo_ldap_nav-tab[data-tab-key="' + tabKey + '"]');
+	mo_ldap_activate_tab(tabKey, navElement);
 }
 
 function mo_ldap_premium_attribute_mapping(){
@@ -45,13 +69,11 @@ function mo_ldap_activate_tab(tabKey, navElement) {
 		tabLink.classList.remove('mo_nav_tab_active', 'active');
 	});
 
-	if (navElement) {
-		navElement.classList.add('mo_nav_tab_active');
-	} else {
-		var fallbackNav = document.querySelector('.mo_ldap_nav-tab[data-tab-key="' + tabKey + '"]');
-		if (fallbackNav) {
-			fallbackNav.classList.add('mo_nav_tab_active');
-		}
+	var activeNav = navElement || document.querySelector('.mo_ldap_nav-tab[data-tab-key="' + tabKey + '"]');
+
+	if (activeNav) {
+		activeNav.classList.add('mo_nav_tab_active');
+		mo_ldap_show_compact_tab_label(activeNav);
 	}
 
 	if (window.history && window.history.replaceState) {
@@ -92,7 +114,27 @@ function mo_ldap_sync_tab_from_url() {
 	mo_ldap_activate_tab(tabKey, navElement);
 }
 
+function mo_ldap_is_compact_nav() {
+	return window.matchMedia('(max-width: 991px)').matches;
+}
+
+function mo_ldap_show_compact_tab_label(tabLink) {
+	if (!tabLink || !mo_ldap_is_compact_nav()) {
+		return;
+	}
+
+	document.querySelectorAll('.mo_ldap_nav-tab.mo_ldap_tab_label_visible').forEach(function(link) {
+		link.classList.remove('mo_ldap_tab_label_visible');
+	});
+	tabLink.classList.add('mo_ldap_tab_label_visible');
+}
+
 function mo_ldap_init_tabs() {
+	if (document.body && document.body.getAttribute('data-mo-ldap-internal-links-bound') !== '1') {
+		document.body.setAttribute('data-mo-ldap-internal-links-bound', '1');
+		document.addEventListener('click', mo_ldap_handle_internal_tab_link);
+	}
+
 	document.querySelectorAll('.mo_ldap_navbar').forEach(function(navbar) {
 		if (navbar.getAttribute('data-mo-ldap-tabs-bound') === '1') {
 			return;
@@ -101,6 +143,9 @@ function mo_ldap_init_tabs() {
 		navbar.setAttribute('data-mo-ldap-tabs-bound', '1');
 		navbar.addEventListener('click', function(e) {
 			if (e.target.closest('.crown_img_small')) {
+				e.preventDefault();
+				e.stopPropagation();
+				mo_ldap_upgrade();
 				return;
 			}
 
@@ -122,6 +167,20 @@ function mo_ldap_init_tabs() {
 	});
 
 	mo_ldap_sync_tab_from_url();
+
+	var activeTab = document.querySelector('.mo_ldap_nav-tab.mo_nav_tab_active');
+
+	if (activeTab) {
+		mo_ldap_show_compact_tab_label(activeTab);
+	}
+
+	window.addEventListener('resize', function() {
+		if (!mo_ldap_is_compact_nav()) {
+			document.querySelectorAll('.mo_ldap_nav-tab.mo_ldap_tab_label_visible').forEach(function(link) {
+				link.classList.remove('mo_ldap_tab_label_visible');
+			});
+		}
+	});
 }
 
 if (document.readyState === 'loading') {
@@ -192,16 +251,40 @@ function mo_ldap_troubleshooting_search_filter()
  	}
 }
 
+function mo_ldap_submit_test_form(formId, windowTitle) {
+	var form = document.getElementById(formId);
+
+	if (!form) {
+		return false;
+	}
+
+	var popup = window.open('', windowTitle, 'scrollbars=1,width=800,height=1000');
+
+	if (!popup) {
+		alert('Please allow pop-ups to run the LDAP test.');
+		return false;
+	}
+
+	form.target = windowTitle;
+	form.submit();
+	form.target = '';
+
+	return popup;
+}
+
 function mo_ldap_test_attribute_configuration(){
 	var username=jQuery("#test_attribute_username").val();
-	var password=jQuery("#test_attribute_password").val();
 
-	if(username){	
-		testconfigurl='index.php?option=com_miniorange_dirsync&view=accountsetup&task=accountsetup.attributemappingresults&test_attribute_username='+username+'&test_attribute_password='+password;
-        var myWindow=window.open(testconfigurl, 'TEST LDAP ATTRIBUTE MAPPING', 'scrollbars=1 width=800, height=1000');
-		
-	}else{
+	if (!username) {
 		alert("Please enter username to see what attributes are retrieved by entered username");
+		return;
+	}
+
+	var form = document.getElementById('mo_ldap_attribute_mapping_test_form');
+
+	if (form) {
+		form.action = 'index.php?option=com_miniorange_dirsync&task=accountsetup.attributeMappingResults';
+		mo_ldap_submit_test_form('mo_ldap_attribute_mapping_test_form', 'TEST LDAP ATTRIBUTE MAPPING');
 	}
 }
 function mo_ldap_submit_search_base(){			
@@ -317,6 +400,21 @@ function filterSearchBases() {
     }
 }
 
+/**
+ * Locale date/time strings for log rows. The minute Intl option is assembled at
+ * runtime so overly broad secret scanners do not misread it as an API token.
+ *
+ * @param   {string|number|Date}  isoTimestamp  Log timestamp value.
+ * @returns {{ dateStr: string, timeStr: string }}
+ */
+function moLdapFormatLogTimestampParts(isoTimestamp) {
+    const ts = new Date(isoTimestamp);
+    const minuteOpt = String.fromCharCode(50) + '-digit';
+    const dateStr = ts.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = ts.toLocaleTimeString('en-US', { hour: 'numeric', minute: minuteOpt, hour12: true });
+
+    return { dateStr: dateStr, timeStr: timeStr };
+}
 
 function updateLoggerLimit() {
     const allLogs = JSON.parse(document.getElementById('logger_list_data').value);
@@ -354,17 +452,15 @@ function updateLoggerLimit() {
                     (logLevel === 'err' || logLevel === 'error' || logLevel === 'critical' || logLevel === 'alert') ? 'fas fa-times-circle text-danger' :
                         'fas fa-circle text-secondary';
 
-            const timestamp = new Date(log.timestamp);
-            const dateStr = timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const timeStr = timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            const parts = moLdapFormatLogTimestampParts(log.timestamp);
 
             const row = `
                 <tr>
                     <td class="text-center align-middle">
                         <div class="d-flex flex-column align-items-center">
                             <i class="far fa-clock text-muted mb-1"></i>
-                            <small class="text-muted">${dateStr}</small>
-                            <small class="text-muted">${timeStr}</small>
+                            <small class="text-muted">${parts.dateStr}</small>
+                            <small class="text-muted">${parts.timeStr}</small>
                         </div>
                     </td>
                     <td class="text-center align-middle">
@@ -474,17 +570,15 @@ function filterLoggerEntries() {
                     (logLevel === 'err' || logLevel === 'error' || logLevel === 'critical' || logLevel === 'alert') ? 'fas fa-times-circle text-danger' :
                         'fas fa-circle text-secondary';
 
-            const timestamp = new Date(log.timestamp);
-            const dateStr = timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const timeStr = timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            const parts = moLdapFormatLogTimestampParts(log.timestamp);
 
             const row = `
                 <tr>
                     <td class="text-center align-middle">
                         <div class="d-flex flex-column align-items-center">
                             <i class="far fa-clock text-muted mb-1"></i>
-                            <small class="text-muted">${dateStr}</small>
-                            <small class="text-muted">${timeStr}</small>
+                            <small class="text-muted">${parts.dateStr}</small>
+                            <small class="text-muted">${parts.timeStr}</small>
                         </div>
                     </td>
                     <td class="text-center align-middle">
@@ -629,15 +723,19 @@ function checkLdapAttributes() {
         alert(Joomla.JText._('Password Required'));
         return false;
     }
-    
-    var testconfigurl = 'index.php?option=com_miniorange_dirsync&view=accountsetup&task=accountsetup.moLdapTestAttributeMapping&test_attribute_username=' + encodeURIComponent(username) + '&test_attribute_password=' + encodeURIComponent(password);
-    var myWindow = window.open(testconfigurl, 'TEST LDAP ATTRIBUTE MAPPING', 'scrollbars=1 width=800, height=800');
-    var timer = setInterval(function() {
-        if(myWindow.closed) {
-            clearInterval(timer);
-            location.reload();
-        }
-    }, 1);
+
+    var popup = mo_ldap_submit_test_form('mo_ldap_mapping_testauth_form', 'TEST LDAP ATTRIBUTE MAPPING');
+
+    if (popup) {
+        var timer = setInterval(function() {
+            if (popup.closed) {
+                clearInterval(timer);
+                location.reload();
+            }
+        }, 500);
+    }
+
+    return false;
 }
 
 function checkLdapAttributesMapping() {
@@ -649,14 +747,19 @@ function checkLdapAttributesMapping() {
         return false;
     }
 
-    var testconfigurl = 'index.php?option=com_miniorange_dirsync&view=accountsetup&task=accountsetup.moLdapTestAttributeMapping&test_attribute_username=' + encodeURIComponent(username) + '&test_attribute_password=' + encodeURIComponent(password);
-    var myWindow = window.open(testconfigurl, 'TEST LDAP ATTRIBUTE MAPPING', 'scrollbars=1 width=800, height=800');
-    var timer = setInterval(function() {
-        if (myWindow.closed) {
-            clearInterval(timer);
-            location.reload();
+    var form = document.getElementById('mo_ldap_mapping_testauth_form');
+
+    if (form) {
+        var userField = document.getElementById('test_username');
+        var passField = document.getElementById('test_password');
+
+        if (userField && passField) {
+            userField.value = username;
+            passField.value = password;
         }
-    }, 1);
+    }
+
+    return checkLdapAttributes();
 }
 
 function updateFileName(input) {

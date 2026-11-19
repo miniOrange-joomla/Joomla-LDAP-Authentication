@@ -23,6 +23,7 @@ use Joomla\CMS\Router\Route;
 
 require_once JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/MoConstants.php';
 MoConstants::includeHelpers();
+require_once JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/helpers/mo_ldap_overview.php';
 
 $document = Factory::getApplication()->getDocument();
 
@@ -97,7 +98,7 @@ if (!$isSystemEnabled || !$isAuthEnabled)
 	<?php
 }
 
-$dirsyncActiveTab = 'ldapconfiguration';
+$dirsyncActiveTab = 'overview';
 $app  = Factory::getApplication();
 $input = MoLdapUtility::moLdapGetApplicationInput($app);
 
@@ -106,13 +107,39 @@ $dirsyncActiveTab = $input->getString('tab-panel', '');
 
 if ($dirsyncActiveTab === '')
 {
-	$dirsyncActiveTab = $input->post->getString('tab-panel', 'ldapconfiguration');
+	$dirsyncActiveTab = $input->post->getString('tab-panel', 'overview');
 }
+
+$ldapPluginVersion = '6.4.9';
+$manifestPath = JPATH_ADMINISTRATOR . '/components/com_miniorange_dirsync/miniorange_dirsync.xml';
+
+if (is_file($manifestPath))
+{
+	$manifest = @simplexml_load_file($manifestPath);
+
+	if ($manifest && isset($manifest->version))
+	{
+		$ldapPluginVersion = (string) $manifest->version;
+	}
+}
+
+$ldapExtensionReady = $isSystemEnabled && $isAuthEnabled
+	&& MoLdapUtility::moLdapIsExtensionInstalled('ldap') == 1
+	&& MoLdapUtility::moLdapIsExtensionInstalled('curl') == 1;
 
 if ($dirsyncActiveTab === 'loggers')
 {
 	$dirsyncActiveTab = 'moLoggers';
 }
+
+$queryTypeParam = $input->getString('query_type', '');
+
+if ($dirsyncActiveTab === 'mo_ldap_trial_demo' && $queryTypeParam === 'trial')
+{
+	$app->redirect(MoConstants::JOOMLA_SANDBOX_TRIAL_URL);
+}
+
+$sandboxTrialUrl = htmlspecialchars(MoConstants::JOOMLA_SANDBOX_TRIAL_URL, ENT_QUOTES, 'UTF-8');
 
 function getDirectoryDetails()
 {
@@ -170,6 +197,48 @@ function moLdapBuildGroupCheckboxesHtml($groups)
 			$html .= '</div></div>';
 		}
 	}
+
+	return $html;
+}
+
+/**
+ * Setup guide + optional video links for section headers.
+ */
+function moLdapRenderDocHelpLinks($showVideoGuide = true)
+{
+	$html = '<div class="mo_ldap_help_links">';
+
+	$html .= '<a href="' . htmlspecialchars(MoConstants::LDAP_CONFIGURATION_GUIDE, ENT_QUOTES, 'UTF-8') . '"';
+	$html .= ' target="_blank" rel="noopener noreferrer" class="mo_ldap_help_link">';
+	$html .= '<span class="mo_ldap_help_link_icon" aria-hidden="true"><i class="fa fa-book"></i></span>';
+	$html .= '<span class="mo_ldap_help_link_text">' . Text::_('COM_MINIORANGE_SETUP_GUIDE') . '</span>';
+	$html .= '</a>';
+
+	if ($showVideoGuide)
+	{
+		$html .= '<a href="' . htmlspecialchars(MoConstants::LDAP_VIDEO_SETUP_GUIDE, ENT_QUOTES, 'UTF-8') . '"';
+		$html .= ' target="_blank" rel="noopener noreferrer" class="mo_ldap_help_link mo_ldap_help_link--video">';
+		$html .= '<span class="mo_ldap_help_link_icon" aria-hidden="true"><i class="fa fa-play-circle"></i></span>';
+		$html .= '<span class="mo_ldap_help_link_text">' . Text::_('COM_MINIORANGE_VIDEO_SETUP_GUIDE') . '</span>';
+		$html .= '</a>';
+	}
+
+	$html .= '</div>';
+
+	return $html;
+}
+
+/**
+ * Single external doc link (section subheaders).
+ */
+function moLdapRenderSingleDocLink($url, $labelKey = 'COM_MINIORANGE_SETUP_GUIDE', $iconClass = 'fa-book')
+{
+	$html = '<div class="mo_ldap_help_links">';
+	$html .= '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer" class="mo_ldap_help_link">';
+	$html .= '<span class="mo_ldap_help_link_icon" aria-hidden="true"><i class="fa ' . htmlspecialchars($iconClass, ENT_QUOTES, 'UTF-8') . '"></i></span>';
+	$html .= '<span class="mo_ldap_help_link_text">' . Text::_($labelKey) . '</span>';
+	$html .= '</a>';
+	$html .= '</div>';
 
 	return $html;
 }
@@ -247,9 +316,11 @@ if (version_compare($version->getShortVersion(), '4.0', '<='))
 		<div class="mo_boot_row mo_boot_p-1">
 			<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-end mo_boot_align-items-center mo_boot_gap-2 ">
 
-				<a href="index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=mo_ldap_trial_demo&query_type=trial"
+				<a href="<?php echo $sandboxTrialUrl; ?>"
 				   class="mo_boot_btn mo_boot_px-4 mo_boot_py-1 mo_boot_btn-primary"
-				   title="Need Premium features? Contact us">
+				   target="_blank"
+				   rel="noopener noreferrer"
+				   title="Need Premium features? Start a free trial">
 					<?php echo Text::_('COM_MINIORANGE_LDAP_FREE_TRIAL'); ?>
 				</a>
 
@@ -271,7 +342,6 @@ if (is_array($tabs))
 	foreach ($tabs as $key => $tab)
 	{
 		$tabId = htmlspecialchars($tab['id'], ENT_QUOTES, 'UTF-8');
-		$tabIcon = htmlspecialchars($tab['icon'], ENT_QUOTES, 'UTF-8');
 		$tabHref = htmlspecialchars(
 			Route::_('index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=' . rawurlencode($key)),
 			ENT_QUOTES,
@@ -280,18 +350,32 @@ if (is_array($tabs))
 		$paneId = htmlspecialchars(ltrim($tab['href'], '#'), ENT_QUOTES, 'UTF-8');
 		$tabKey = htmlspecialchars($key, ENT_QUOTES, 'UTF-8');
 		$activeClass = $dirsyncActiveTab == $key ? 'mo_nav_tab_active' : '';
-		$tabNavLinksHtml .= '<a id="' . $tabId . '" class="mo_boot_col mo_ldap_nav-tab ' . $activeClass . '"';
+		$tabLabelText = Text::_($tab['text']);
+		$tabLabelEsc = htmlspecialchars($tabLabelText, ENT_QUOTES, 'UTF-8');
+		$tabIconClass = isset($tab['icon']) ? trim((string) $tab['icon']) : 'fa fa-circle';
+		$tabIconClass = preg_replace('/\b(fas|far|fab)\b/', 'fa', $tabIconClass);
+		$tabIconClass = str_replace('fa-gear', 'fa-cog', $tabIconClass);
+		$tabIconClass = str_replace('fa-sliders', 'fa-cog', $tabIconClass);
+
+		if (!preg_match('/\bfa\s+fa-[\w-]+/i', $tabIconClass))
+		{
+			$tabIconClass = 'fa fa-circle';
+		}
+
+		$tabIconClass = htmlspecialchars($tabIconClass, ENT_QUOTES, 'UTF-8');
+		$tabNavLinksHtml .= '<a id="' . $tabId . '" class="mo_ldap_nav-tab ' . $activeClass . '"';
 		$tabNavLinksHtml .= ' href="' . $tabHref . '"';
-		$tabNavLinksHtml .= ' data-tab-key="' . $tabKey . '" data-pane-id="' . $paneId . '" role="tab">';
-		$tabNavLinksHtml .= '<span><i class="fa fa-solid ' . $tabIcon . '"></i></span>';
-		$tabNavLinksHtml .= '<span class="tab-label mo_boot_p-1">' . Text::_($tab['text']) . '</span>';
+		$tabNavLinksHtml .= ' data-tab-key="' . $tabKey . '" data-pane-id="' . $paneId . '"';
+		$tabNavLinksHtml .= ' title="' . $tabLabelEsc . '" aria-label="' . $tabLabelEsc . '" role="tab">';
+		$tabNavLinksHtml .= '<span class="tab-icon" aria-hidden="true"><i class="' . $tabIconClass . '"></i></span>';
+		$tabNavLinksHtml .= '<span class="tab-label mo_boot_p-1">' . $tabLabelText . '</span>';
 
 		if ($key === 'ntlmsso' || $key === 'addons')
 		{
 			$crownUrl = htmlspecialchars(MoConstants::getImageUrl('crown.webp'), ENT_QUOTES, 'UTF-8');
 			$crownTitle = htmlspecialchars(Text::_('COM_MINIORANGE_UPGRADE_TO_PREMIUM'), ENT_QUOTES, 'UTF-8');
-			$tabNavLinksHtml .= '<sup><img class="crown_img_small mo_boot_ml-1 mo_ldap_cursor-type" src="' . $crownUrl;
-			$tabNavLinksHtml .= '" style="width: 16px; height: 16px;" onclick="mo_ldap_upgrade()" title="' . $crownTitle . '"></sup>';
+			$tabNavLinksHtml .= '<sup><img class="crown_img_small mo_ldap_cursor-type" src="' . $crownUrl;
+			$tabNavLinksHtml .= '" style="width: 16px; height: 16px;" title="' . $crownTitle . '"></sup>';
 		}
 
 		$tabNavLinksHtml .= '</a>';
@@ -299,9 +383,11 @@ if (is_array($tabs))
 }
 
 ?>
-<div class="mo_boot_container-fluid">
-	<div class="mo_boot_row mo_ldap_navbar">
-		<?php echo $tabNavLinksHtml; ?>
+<div class="mo_boot_container-fluid mo_boot_m-0 mo_boot_p-0">
+	<div class="mo_boot_row mo_boot_m-0 mo_boot_p-0">
+		<div class="mo_boot_col-sm-12 mo_boot_m-0 mo_boot_p-0 mo_boot_mb-2 mo_ldap_navbar">
+			<?php echo $tabNavLinksHtml; ?>
+		</div>
 	</div>
 </div>
 
@@ -313,6 +399,9 @@ if (is_array($tabs))
 		</a>
 	</div>
 	<div class="tab-content mo_ldap_tab-content">
+		<div id="overview" class="tab-pane <?php echo $dirsyncActiveTab == 'overview' ? 'active show' : ''; ?>">
+			<?php moLdapOverview($ldapExtensionReady, $ldapPluginVersion); ?>
+		</div>
 		<div id="ldapconfiguration" class="tab-pane <?php echo $dirsyncActiveTab == 'ldapconfiguration' ? 'active show' : ''; ?>">
 			<div class="mo_boot_row">
 				<div class="mo_boot_col-sm-12">
@@ -479,7 +568,7 @@ function moLdapConfiguration($dirsyncActiveTab = 'ldapconfiguration')
 	{
 		$ldapServerUrl          = $moLdapServerConfig->getServerURL();
 		$serviceAccountDn       = $moLdapServerConfig->getBindDN();
-		$serviceAccountPassword = $moLdapServerConfig->getBindDNPassword();
+		$serviceAccountPassword = '';
 		$searchBase 	  = $moLdapServerConfig->getSearchBase();
 		$searchFilter 			  = $moLdapServerConfig->getSearchFilter();
 		$serverType 			  = $moLdapServerConfig->getServerType();
@@ -505,22 +594,9 @@ function moLdapConfiguration($dirsyncActiveTab = 'ldapconfiguration')
 	<div class="mo_boot_container-fluid mo_main_ldap_section">
 		<div id="mo_ldap_server_config" class="mo_boot_col-sm-12">
 			<div class="mo_boot_col-sm-12" id="mo_ldap_server_configuration">
-				<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_flex-wrap mo_boot_gap-2">
+				<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_flex-wrap mo_boot_gap-2 mo_ldap_section_head">
 					<h3 class="mo_ldap_sub_heading mo_boot_mb-0"><?php echo Text::_('COM_MINIORANGE_LDAP_CONNECTION'); ?></h3>
-					<div class="mo_boot_d-flex mo_boot_justify-content-end mo_boot_align-items-center mo_boot_gap-3 mo_boot_flex-wrap">
-						<a href="<?php echo MoConstants::LDAP_CONFIGURATION_GUIDE; ?>"
-							target="_blank"
-							class="mo_boot_text-dark">
-							<i class="fa fa-book mo_boot_me-1"></i>
-							<?php echo Text::_('COM_MINIORANGE_SETUP_GUIDE'); ?>
-						</a>
-						<a href="<?php echo MoConstants::LDAP_VIDEO_SETUP_GUIDE; ?>"
-							target="_blank"
-							class="mo_boot_text-dark">
-							<i class="fa fa-play-circle mo_boot_me-1"></i>
-							<?php echo Text::_('COM_MINIORANGE_VIDEO_SETUP_GUIDE'); ?>
-						</a>
-					</div>
+					<?php echo moLdapRenderDocHelpLinks(true); ?>
 				</div>
 
 				<!-- Step 1: LDAP Server Configuration -->
@@ -588,11 +664,12 @@ function moLdapConfiguration($dirsyncActiveTab = 'ldapconfiguration')
 								echo FormRenderer::renderField($serviceAccountConfig);
 
 								// Service Account Password
+								$hasStoredServicePassword = !empty($moLdapServerConfig->getServerURL());
 								$servicePasswordConfig = (new FormFieldConfig('service_account_password', Text::_('COM_MINIORANGE_SERVICE_ACCOUNT_PASSWORD')))
 									->setType('password')
-									->setValue(isset($serviceAccountPassword) ? $serviceAccountPassword : '')
-									->setPlaceholder(Text::_('COM_MINIORANGE_SERVICE_ACCOUNT_PASSWORD_PLACEHOLDER'))
-									->setRequired(true)
+									->setValue('')
+									->setPlaceholder($hasStoredServicePassword ? Text::_('COM_MINIORANGE_SERVICE_ACCOUNT_PASSWORD_PLACEHOLDER') . ' (leave blank to keep unchanged)' : Text::_('COM_MINIORANGE_SERVICE_ACCOUNT_PASSWORD_PLACEHOLDER'))
+									->setRequired(!$hasStoredServicePassword)
 									->setHelpTitle(Text::_('COM_MINIORANGE_SERVICE_ACCOUNT_PASS_HELP'))
 									->setLayout(4, 7, 1);
 
@@ -632,8 +709,8 @@ function moLdapConfiguration($dirsyncActiveTab = 'ldapconfiguration')
 				</div>
 
 				<!-- Step 2: LDAP Mapping Configuration -->
-				<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_mt-5" id="mo_ldap_configuration_step2">
-					<h3 class="mo_ldap_sub_heading"><?php echo Text::_('COM_MINIORANGE_LDAP_MAPPING_CONFIGURATION'); ?></h3>
+				<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_mt-5 mo_ldap_section_head" id="mo_ldap_configuration_step2">
+					<h3 class="mo_ldap_sub_heading mo_boot_mb-0"><?php echo Text::_('COM_MINIORANGE_LDAP_MAPPING_CONFIGURATION'); ?></h3>
 				</div>
 					<div class="mo_ldap_mini_section mo_boot_col-sm-12">
 						<form id="ldap_mapping_config_form" class="mo_boot_ms-5" name="ldap_mapping_config_form" method="post"
@@ -705,8 +782,8 @@ function moLdapConfiguration($dirsyncActiveTab = 'ldapconfiguration')
 					</div>
 
 				<!-- Step 3: Test Authentication -->
-				<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_mt-5">
-					<h3 class="mo_ldap_sub_heading">
+				<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_mt-5 mo_ldap_section_head">
+					<h3 class="mo_ldap_sub_heading mo_boot_mb-0">
 						<?php echo Text::_('COM_MINIORANGE_LDAP_TEST_AUTHENTICATION'); ?>
 					</h3>
 				</div>
@@ -719,7 +796,8 @@ function moLdapConfiguration($dirsyncActiveTab = 'ldapconfiguration')
 					</div>
 
 					<form id="mo_ldap_mapping_testauth_form" name="mo_ldap_mapping_testauth_form" method="post"
-						  action="<?php echo Route::_(MoConstants::LDAP_TEST_CONFIG_URL); ?>">
+						  action="<?php echo Route::_('index.php?option=com_miniorange_dirsync&task=accountsetup.moLdapTestAttributeMapping'); ?>">
+						<?php echo HTMLHelper::_('form.token'); ?>
 						<?php
 							// Test Username Field
 							$testUsernameConfig = (new FormFieldConfig('test_username', Text::_('COM_MINIORANGE_TEST_USERNAME')))
@@ -802,8 +880,8 @@ function moLdapLoginSettings()
 	<div class="mo_boot_container-fluid mo_main_ldap_section">
 		<div class="mo_boot_col-sm-12">
 			<div class="mo_boot_col-sm-12">
-				<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center"">
-					<h3 class="mo_ldap_sub_heading">
+				<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_ldap_section_head">
+					<h3 class="mo_ldap_sub_heading mo_boot_mb-0">
 						<?php echo Text::_('COM_MINIORANGE_LDAP_LOGIN_SETTINGS'); ?>
 					</h3>
 				</div>
@@ -941,24 +1019,11 @@ function moLdapAttributeMapping()
 		   value="<?php echo htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?>" />
 	<div class="mo_boot_container-fluid mo_main_ldap_section">
 		<div id="mo_ldap_server_config_wrapper">
-			<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_flex-wrap mo_boot_gap-2" id="mo_ldap_server_configuration">
+			<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_flex-wrap mo_boot_gap-2 mo_ldap_section_head" id="mo_ldap_server_configuration">
 				<h3 class="mo_ldap_sub_heading mo_boot_mb-0">
 					<?php echo Text::_('COM_MINIORANGE_ATTRIBUTE_AND_GROUP_MAPPING'); ?>
 				</h3>
-				<div class="mo_boot_d-flex mo_boot_justify-content-end mo_boot_align-items-center mo_boot_gap-3 mo_boot_flex-wrap">
-					<a href="<?php echo MoConstants::LDAP_CONFIGURATION_GUIDE; ?>"
-						target="_blank"
-						class="mo_boot_text-dark">
-						<i class="fa fa-book mo_boot_me-1"></i>
-						<?php echo Text::_('COM_MINIORANGE_SETUP_GUIDE'); ?>
-					</a>
-					<a href="<?php echo MoConstants::LDAP_VIDEO_SETUP_GUIDE; ?>"
-						target="_blank"
-						class="mo_boot_text-dark">
-						<i class="fa fa-play-circle mo_boot_me-1"></i>
-						<?php echo Text::_('COM_MINIORANGE_VIDEO_SETUP_GUIDE'); ?>
-					</a>
-				</div>
+				<?php echo moLdapRenderDocHelpLinks(true); ?>
 			</div>
 
 			<!-- Main Content and Sidebar Layout -->
@@ -1165,8 +1230,8 @@ function moLdapAttributeMapping()
 					</div>
 
 					<!-- 4. Group Mapping Section -->
-					<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_mt-5">
-						<h3 class="mo_ldap_sub_heading">
+					<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_mt-5 mo_ldap_section_head">
+						<h3 class="mo_ldap_sub_heading mo_boot_mb-0">
 							<?php echo Text::_('COM_MINIORANGE_GROUP_MAPPING'); ?>
 						</h3>
 					</div>
@@ -1344,8 +1409,9 @@ function moLdapNtlmSso()
 {
 	?>
 	<div class="mo_boot_container-fluid mo_main_ldap_section">
-		<div class="mo_boot_col-sm-12 mo_boot_row mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center">
-			<h3 class="mo_ldap_sub_heading">
+		<div class="mo_boot_row">
+			<div class="mo_boot_col-sm-12 mo_ldap_section_head mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_boot_flex-wrap mo_boot_gap-2">
+			<h3 class="mo_ldap_sub_heading mo_boot_mb-0 mo_ldap_section_head_title">
 				<?php echo Text::_('COM_MINIORANGE_NTLM_SSO_TITLE'); ?>
 				<sup>
 					<img class="crown_img_small mo_boot_ml-2"
@@ -1354,26 +1420,25 @@ function moLdapNtlmSso()
 				</sup>
 			</h3>
 
-			<div class="mo_boot_d-flex mo_boot_gap-3">
+			<div class="mo_ldap_help_links">
 				<a href="<?php echo MoConstants::NTLM_SSO_SETUP_GUIDE; ?>"
-					target="_blank"
-					class="mo_boot_text-dark">
-					<i class="fa fa-question-circle mo_boot_me-1"></i>
-					<?php echo Text::_('COM_MINIORANGE_NTLM_WHAT_IS_GUIDE'); ?>
+					target="_blank" rel="noopener noreferrer" class="mo_ldap_help_link">
+					<span class="mo_ldap_help_link_icon" aria-hidden="true"><i class="fa fa-question-circle"></i></span>
+					<span class="mo_ldap_help_link_text"><?php echo Text::_('COM_MINIORANGE_NTLM_WHAT_IS_GUIDE'); ?></span>
 				</a>
 				<a href="<?php echo MoConstants::NTLM_AUTH_DOCS; ?>"
-					target="_blank"
-					class="mo_boot_text-dark">
-					<i class="fa fa-book mo_boot_me-1"></i>
-					<?php echo Text::_('COM_MINIORANGE_SETUP_GUIDE'); ?>
+					target="_blank" rel="noopener noreferrer" class="mo_ldap_help_link">
+					<span class="mo_ldap_help_link_icon" aria-hidden="true"><i class="fa fa-book"></i></span>
+					<span class="mo_ldap_help_link_text"><?php echo Text::_('COM_MINIORANGE_SETUP_GUIDE'); ?></span>
 				</a>
+			</div>
 			</div>
 		</div>
 
 		<!-- NTLM SSO Feature Card -->
-		<div class="mo_boot_row">
-			<form>
-				<div class="mo_boot_col-sm-12 mo_boot_row">
+		<div class="mo_boot_row mo_ldap_section_body">
+			<form class="mo_boot_col-sm-12">
+				<div class="mo_boot_row">
 					<div class="mo_ldap_mini_section mo_boot_col-sm-12">
 						<?php
 							// Enable Role Mapping Toggle
@@ -1462,16 +1527,15 @@ function moLdapLicensingPlan()
 	?>
 	<div class="mo_boot_container-fluid mo_main_ldap_section">
 		<div class="mo_boot_row">
-			<div class="mo_boot_col-sm-12">
-				<div class="mo_boot_col-sm-12 mo_boot_row mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center">
-					<h3 class="mo_ldap_sub_heading"><?php echo Text::_('COM_MINIORANGE_FEATURE_COMPARISON'); ?></h3>
-				</div>
+			<div class="mo_boot_col-sm-12 mo_ldap_section_head">
+				<h3 class="mo_ldap_sub_heading mo_boot_mb-0"><?php echo Text::_('COM_MINIORANGE_FEATURE_COMPARISON'); ?></h3>
 			</div>
+		</div>
 
 			<!-- Feature Comparison Section -->
-			<div>
-				<div class="mo_boot_mb-5">
-					<div class="mo_boot_row">
+			<div class="mo_boot_col-sm-12">
+				<div class="mo_boot_mb-4 mo_ldap_plan_section">
+					<div class="mo_boot_row mo_ldap_plan_cards">
 						<?php
 							echo FormRenderer::renderPlan(
 								'free',
@@ -1486,7 +1550,7 @@ function moLdapLicensingPlan()
 							echo FormRenderer::renderPlan(
 								'basic',
 								Text::_('COM_MINIORANGE_PLAN_BASIC'),
-								'$149*',
+								'$249*',
 								Text::_('COM_MINIORANGE_CONTACT_US'),
 								'link',
 								array(Text::_('COM_MINIORANGE_EMAIL_SUPPORT'), Text::_('COM_MINIORANGE_EVERYTHING_IN_FREE'), Text::_('COM_MINIORANGE_AUTO_REGISTER_USERS'), Text::_('COM_MINIORANGE_ADVANCED_MAPPING'), Text::_('COM_MINIORANGE_SUPPORT_TLS_CONNECTION'), Text::_('COM_MINIORANGE_CUSTOM_REDIRECT_URL')),
@@ -1510,7 +1574,7 @@ function moLdapLicensingPlan()
 							echo FormRenderer::renderPlan(
 								'enterprise',
 								Text::_('COM_MINIORANGE_PLAN_ENTERPRISE'),
-								'$549*',
+								'$699*',
 								Text::_('COM_MINIORANGE_CONTACT_US'),
 								'link',
 								array(Text::_('COM_MINIORANGE_EVERYTHING_IN_PREMIUM'), Text::_('COM_MINIORANGE_DEDICATED_SUPPORT'), Text::_('COM_MINIORANGE_CUSTOM_DEVELOPMENT'), Text::_('COM_MINIORANGE_NTLM_KERBEROS_AUTHENTICATION'), Text::_('COM_MINIORANGE_MULTIPLE_LDAP_SERVER_SUPPORT'), Text::_('COM_MINIORANGE_USER_PASSWORD_SYNC_AD'), Text::_('COM_MINIORANGE_IMPORT_USERS_FROM_AD')),
@@ -1533,7 +1597,7 @@ function moLdapLicensingPlan()
 							<h3><?php echo Text::_('COM_MINIORANGE_LDAP_UPGRADE_HEADER'); ?></h3>
 							<i class="fa fa-plus"></i>
 						</div>
-						<div class="collapse" id="upgrade-section">
+						<div class="collapse mo_ldap_upgrade_steps" id="upgrade-section">
 							<div class="mo_boot_row mo_boot_mt-3 mo_boot_col-sm-12">
 								<div class="mo_boot_col-sm-6 mo_works-step mo_boot_d-flex">
 									<div class="mo_ldap_step_number">1</div>
@@ -1607,7 +1671,6 @@ function moLdapLicensingPlan()
 								</p>
 							</div>
 						</div>
-					</div>
 					</div>
 				</div>
 			</div>
@@ -1737,7 +1800,7 @@ function moLoggers()
 
 	if (!$enableLoggers)
 	{
-		$loggerDisabledWarningHtml = '<div class="mo_boot_col-sm-12 mo_boot_row">';
+		$loggerDisabledWarningHtml = '<div class="mo_boot_col-sm-12 mo_boot_row mo_ldap_logger_disabled_notice">';
 		$loggerDisabledWarningHtml .= '<div class="mo_ldap_mini_section mo_boot_col-sm-12 mo_boot_row">';
 		$loggerDisabledWarningHtml .= '<i class="fa fa-exclamation-triangle text-warning"></i><div>';
 		$loggerDisabledWarningHtml .= '<h6>' . Text::_('COM_MINIORANGE_LOGGER_DISABLED_TITLE') . '</h6>';
@@ -1752,7 +1815,7 @@ function moLoggers()
 		if (empty($paginatedLogs))
 		{
 			$hasFilters = !empty($searchTerm) || !empty($levelFilter) || !empty($dateFrom) || !empty($dateTo) || !empty($codeFilter);
-			$logsListSectionHtml = '<div class="mo_boot_col-sm-12 mo_boot_row mo_boot_d-flex mo_boot_justify-content-center mo_boot_align-items-center mo_boot_mt-4 mo_boot_mb-5">';
+			$logsListSectionHtml = '<div class="mo_boot_col-sm-12 mo_boot_row mo_boot_d-flex mo_boot_justify-content-center mo_boot_align-items-center mo_ldap_logger_list_block">';
 
 			if ($hasFilters)
 			{
@@ -1794,7 +1857,7 @@ function moLoggers()
 				$logsRowsHtml .= '<td class="text-wrap">' . $issueEsc . '</td></tr>';
 			}
 
-			$logsListSectionHtml = '<div class="mo_ldap_mini_section mo_boot_col-sm-12 mo_boot_row">';
+			$logsListSectionHtml = '<div class="mo_ldap_mini_section mo_boot_col-sm-12 mo_boot_row mo_ldap_logger_list_block">';
 			$logsListSectionHtml .= '<table class="mo_ldap_logs_table mo_boot_col-sm-12" id="logsList">';
 			$logsListSectionHtml .= '<caption class="visually-hidden">' . Text::_('COM_MINIORANGE_LOGGER_TABLE_CAPTION') . '</caption>';
 			$logsListSectionHtml .= '<thead><tr><th scope="col" style="width: 20%;">' . Text::_('COM_MINIORANGE_LOGGER_DATE') . '</th>';
@@ -1885,11 +1948,11 @@ function moLoggers()
 
 		$loggerEnabledBodyHtml = '<div class="mo_boot_col-sm-12"><div>';
 		$loggerEnabledBodyHtml .= '<div class="mo_boot_col-sm-12 ' . $listDisabledClass . '">';
-		$loggerEnabledBodyHtml .= '<form method="get" action="" id="logger-filter-form"' . $listDisabledStyle . '>';
+		$loggerEnabledBodyHtml .= '<form method="get" action="" id="logger-filter-form" class="mo_ldap_logger_filter_form"' . $listDisabledStyle . '>';
 		$loggerEnabledBodyHtml .= '<input type="hidden" name="option" value="com_miniorange_dirsync">';
 		$loggerEnabledBodyHtml .= '<input type="hidden" name="view" value="accountsetup">';
 		$loggerEnabledBodyHtml .= '<input type="hidden" name="tab-panel" value="moLoggers">';
-		$loggerEnabledBodyHtml .= '<div class="mo_boot_row mo_boot_g-2">';
+		$loggerEnabledBodyHtml .= '<div class="mo_boot_row mo_boot_g-2 mo_boot_mt-3">';
 		$loggerEnabledBodyHtml .= '<div class="mo_boot_col-md-4"><label for="search" class="form-label small fw-bold">';
 		$loggerEnabledBodyHtml .= '<i class="fa fa-search me-1"></i>' . Text::_('COM_MINIORANGE_LOGGER_SEARCH') . '</label>';
 		$loggerEnabledBodyHtml .= '<input type="text" class="form-control form-control-sm" id="search" name="search" value="' . $searchTermEsc . '"';
@@ -1901,7 +1964,7 @@ function moLoggers()
 		$loggerEnabledBodyHtml .= '<option value="info"' . ($levelFilter === 'info' ? ' selected' : '') . '>' . Text::_('COM_MINIORANGE_LOGGER_LEVEL_INFO') . '</option>';
 		$loggerEnabledBodyHtml .= '<option value="warning"' . ($levelFilter === 'warning' ? ' selected' : '') . '>' . Text::_('COM_MINIORANGE_LOGGER_LEVEL_WARNING') . '</option>';
 		$loggerEnabledBodyHtml .= '<option value="error"' . ($levelFilter === 'error' ? ' selected' : '') . '>' . Text::_('COM_MINIORANGE_LOGGER_LEVEL_ERROR') . '</option>';
-		$loggerEnabledBodyHtml .= '<option value="error"' . ($levelFilter === 'notice' ? ' selected' : '') . '>' . Text::_('COM_MINIORANGE_LOGGER_LEVEL_NOTICE') . '</option></select></div>';
+		$loggerEnabledBodyHtml .= '<option value="notice"' . ($levelFilter === 'notice' ? ' selected' : '') . '>' . Text::_('COM_MINIORANGE_LOGGER_LEVEL_NOTICE') . '</option></select></div>';
 		$loggerEnabledBodyHtml .= '<div class="mo_boot_col-md-2"><label for="date_from" class="form-label small fw-bold">';
 		$loggerEnabledBodyHtml .= '<i class="fa fa-calendar me-1"></i>' . Text::_('COM_MINIORANGE_LOGGER_DATE_FROM') . '</label>';
 		$loggerEnabledBodyHtml .= '<input type="date" class="form-control form-control-sm" id="date_from" name="date_from" value="' . $dateFromEsc . '"></div>';
@@ -1923,14 +1986,14 @@ function moLoggers()
 		$loggerEnabledBodyHtml .= '<i class="fas fa-times mo_boot_me-2"></i>' . Text::_('COM_MINIORANGE_LOGGER_CLEAR_FILTERS') . '</a>';
 		$loggerEnabledBodyHtml .= '</div></div></div></div></div></form></div></div></div></div>';
 		$loggerEnabledBodyHtml .= $logsListSectionHtml . $logsPaginationHtml;
-		$loggerEnabledBodyHtml .= '<div class="mo_boot_row mo_boot_col-sm-12 mo_boot_justify-content-between mo_boot_align-items-center mo_boot_mt-4">';
-		$loggerEnabledBodyHtml .= '<div class="mo_boot_col-sm-6">';
-		$loggerEnabledBodyHtml .= '<a href="index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=moLoggers" class="mo_boot_btn mo_boot_btn-success mo_boot_text-decoration-none mo_boot_ms-2"';
+		$loggerEnabledBodyHtml .= '<div class="mo_boot_row mo_boot_col-sm-12 mo_boot_justify-content-between mo_boot_align-items-center mo_boot_mt-4 mo_ldap_logger_actions_row">';
+		$loggerEnabledBodyHtml .= '<div class="mo_boot_col-sm-6 mo_boot_d-flex mo_boot_align-items-center mo_boot_flex-wrap mo_ldap_logger_actions_btns">';
+		$loggerEnabledBodyHtml .= '<a href="index.php?option=com_miniorange_dirsync&view=accountsetup&tab-panel=moLoggers" class="mo_boot_btn mo_boot_btn-success mo_boot_text-decoration-none"';
 		$loggerEnabledBodyHtml .= ' title="' . htmlspecialchars(Text::_('COM_MINIORANGE_FETCH_LATEST_LOGS'), ENT_QUOTES, 'UTF-8') . '">';
 		$loggerEnabledBodyHtml .= '<i class="fa fa-refresh mo_boot_me-1"></i>' . Text::_('COM_MINIORANGE_FETCH_LATEST') . '</a>';
 		$loggerEnabledBodyHtml .= '<a href="index.php?option=com_miniorange_dirsync&view=accountsetup&task=accountsetup.downloadLogs" class="mo_boot_btn mo_boot_btn-primary mo_boot_text-decoration-none"' . $downloadDisabled . '>';
 		$loggerEnabledBodyHtml .= '<i class="fa fa-download mo_boot_me-1"></i>Download</a>';
-		$loggerEnabledBodyHtml .= '<form method="post" action="index.php?option=com_miniorange_dirsync&view=accountsetup&task=accountsetup.resetLogs" style="display: inline;">';
+		$loggerEnabledBodyHtml .= '<form method="post" action="index.php?option=com_miniorange_dirsync&view=accountsetup&task=accountsetup.resetLogs" class="mo_ldap_logger_reset_form">';
 		$loggerEnabledBodyHtml .= '<button type="submit" class="mo_boot_btn mo_boot_btn-primary ' . $resetDisabledClass . '" ' . $resetDisabledAttrs . '>';
 		$loggerEnabledBodyHtml .= '<i class="fas fa-xmark mo_boot_me-1"></i>Reset</button>' . $formToken . '</form></div>';
 		$loggerEnabledBodyHtml .= '<div class="mo_boot_col-sm-6 mo_boot_d-flex mo_boot_justify-content-end mo_boot_align-items-center mo_boot_gap-3">';
@@ -1942,12 +2005,12 @@ function moLoggers()
 	}
 
 	?>
-	<div class="mo_boot_container-fluid mo_main_ldap_section">
+	<div class="mo_boot_container-fluid mo_main_ldap_section mo_ldap_logger_tab">
 		<div id="mo_ldap_server_config_wrapper" class="mo_boot_col-sm-12">
 			<div class="mo_boot_col-sm-12">
 				<div class="mo_boot_col-sm-12 mo_boot_row">
-					<div class="mo_boot_col-sm-12">
-						<h3 class="mo_ldap_sub_heading mo_boot_mb-4">
+					<div class="mo_boot_col-sm-12 mo_ldap_section_head">
+						<h3 class="mo_ldap_sub_heading mo_boot_mb-0">
 							<?php echo Text::_('COM_MINIORANGE_LOGGER_TITLE'); ?>
 						</h3>
 					</div>
@@ -2021,8 +2084,8 @@ function moLdapProvisioning()
 {
 	?>
 	<div class="mo_boot_container-fluid mo_main_ldap_section">
-		<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center">
-			<h3 class="mo_ldap_sub_heading">
+		<div class="mo_boot_col-sm-12 mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_ldap_section_head">
+			<h3 class="mo_ldap_sub_heading mo_boot_mb-0">
 				<?php echo Text::_('COM_MINIORANGE_LDAP_PROVISIONING_FEATURES'); ?>
 				<sup>
 					<img class="crown_img_small"
@@ -2038,12 +2101,7 @@ function moLdapProvisioning()
 				<h4 class="mo_boot_mb-3 mo_boot_sub_heading">
 					<?php echo Text::_('COM_MINIORANGE_IMPORT_USER_FEATURE'); ?>
 				</h4>
-				<a href="<?php echo MoConstants::IMPORT_EXPORT_DOCS; ?>"
-					target="_blank"
-					class="mo_boot_text-dark">
-					<i class="fa fa-book mo_boot_me-1"></i>
-					<?php echo Text::_('COM_MINIORANGE_SETUP_GUIDE'); ?>
-				</a>
+				<?php echo moLdapRenderSingleDocLink(MoConstants::IMPORT_EXPORT_DOCS); ?>
 			</div>
 
 			<?php
@@ -2084,12 +2142,7 @@ function moLdapProvisioning()
 				<h4 class="mo_boot_sub_heading mo_boot_mb-5">
 					<?php echo Text::_('COM_MINIORANGE_DIRECTORY_SYNC_FEATURE'); ?>
 				</h4>
-				<a href="<?php echo MoConstants::PASSWORD_SYNC_ADDON_DOCS; ?>"
-					target="_blank"
-					class="mo_boot_text-dark">
-					<i class="fa fa-book mo_boot_me-1"></i>
-					<?php echo Text::_('COM_MINIORANGE_SETUP_GUIDE'); ?>
-				</a>
+				<?php echo moLdapRenderSingleDocLink(MoConstants::PASSWORD_SYNC_ADDON_DOCS); ?>
 			</div>
 
 			<?php
@@ -2153,7 +2206,7 @@ function moLdapSupportTab()
 {
 	$app  = Factory::getApplication();
 	$input = MoLdapUtility::moLdapGetApplicationInput($app);
-	$currentUser = $app->getIdentity();
+	$currentUser = MoLdapUtility::moLdapGetApplicationUser($app);
 	$customerDetails = MoLdapUtility::moLdapFetchData('#__miniorange_ldap_customer', array('id' => '1'), 'loadAssoc');
 
 	$adminEmail = isset($customerDetails['email']) ? htmlspecialchars($customerDetails['email'], ENT_QUOTES, 'UTF-8') : '';
@@ -2178,12 +2231,12 @@ function moLdapSupportTab()
 		$typeOfQuery = htmlspecialchars(trim($postParams['query_type']), ENT_QUOTES, 'UTF-8');
 	}
 
-	if ($typeOfQuery == 'trial')
+	if ($typeOfQuery === 'trial')
 	{
-		$headerText = Text::_('COM_MINIORANGE_FREE_TRIAL_REQUEST');
-		$descriptionText = Text::_('COM_MINIORANGE_FREE_TRIAL_DESCRIPTION');
+		$app->redirect(MoConstants::JOOMLA_SANDBOX_TRIAL_URL);
 	}
-	elseif ($typeOfQuery == 'configuration')
+
+	if ($typeOfQuery == 'configuration')
 	{
 		$headerText = Text::_('COM_MINIORANGE_SUPPORT_REQUEST');
 		$descriptionText = Text::_('COM_MINIORANGE_SUPPORT_DESCRIPTION');
@@ -2196,7 +2249,7 @@ function moLdapSupportTab()
 
 	$supportDescriptionHtml = '';
 
-	if ($typeOfQuery == 'trial' || $typeOfQuery == 'configuration')
+	if ($typeOfQuery == 'configuration')
 	{
 		$supportDescriptionHtml = '<div><div class="mo_boot_d-flex mo_boot_align-items-center"><div>';
 		$supportDescriptionHtml .= '<p class="mo_boot_mt-1">' . $descriptionText . '</p></div></div></div>';
@@ -2206,19 +2259,9 @@ function moLdapSupportTab()
 		$supportDescriptionHtml = '<p class="mb-0">' . $descriptionText . '</p>';
 	}
 
-	$trialHiddenInputHtml = '';
-
-	if ($typeOfQuery === 'trial')
-	{
-		$trialHiddenInputHtml = '<input type="hidden" name="mo_ldap_setup_call_issue" value="';
-		$trialHiddenInputHtml .= htmlspecialchars(Text::_('COM_MINIORANGE_TRIAL_REQUEST'), ENT_QUOTES, 'UTF-8') . '">';
-	}
-
 	$issueTypeFieldHtml = '';
 
-	if ($typeOfQuery !== 'trial')
-	{
-		$issueTypeFieldHtml = '<div class="mo_boot_mb-4">';
+	$issueTypeFieldHtml = '<div class="mo_boot_mb-4">';
 		$issueTypeFieldHtml .= '<label for="mo_ldap_setup_call_issue" class="form-label fw-bold">';
 		$issueTypeFieldHtml .= Text::_('COM_MINIORANGE_ISSUE') . ' <span class="text-danger">*</span></label>';
 		$issueTypeFieldHtml .= '<select class="form-select" name="mo_ldap_setup_call_issue" id="mo_ldap_setup_call_issue" required>';
@@ -2229,23 +2272,16 @@ function moLdapSupportTab()
 		$issueTypeFieldHtml .= Text::_('COM_MINIORANGE_CONFIGURATION_ISSUES') . '</option>';
 		$issueTypeFieldHtml .= '<option id="mo_ldap_use_case_discussion"' . ($typeOfQuery == 'user_case' ? ' selected' : '') . '>';
 		$issueTypeFieldHtml .= Text::_('COM_MINIORANGE_USECASE_DISCUSSION') . '</option>';
-		$issueTypeFieldHtml .= '<option id="mo_ldap_trial_request"' . ($typeOfQuery == 'trial' ? ' selected' : '') . '>';
-		$issueTypeFieldHtml .= Text::_('COM_MINIORANGE_TRIAL_REQUEST') . '</option>';
 		$issueTypeFieldHtml .= '<option id="mo_ldap_contact_us"' . ($typeOfQuery == 'contact_us' ? ' selected' : '') . '>';
 		$issueTypeFieldHtml .= Text::_('COM_MINIORANGE_CONTACT_US') . '</option>';
 		$issueTypeFieldHtml .= '<option id="mo_ldap_get_quote"' . ($typeOfQuery == 'get_quote' ? ' selected' : '') . '>';
 		$issueTypeFieldHtml .= Text::_('COM_MINIORANGE_GET_QUOTE') . '</option>';
 		$issueTypeFieldHtml .= '<option id="mo_ldap_other_issue"' . ($typeOfQuery == 'other' ? ' selected' : '') . '>';
 		$issueTypeFieldHtml .= Text::_('COM_MINIORANGE_OTHER') . '</option></select></div>';
-	}
 
 	$defaultQuery = '';
 
-	if ($typeOfQuery == 'trial')
-	{
-		$defaultQuery = Text::_('COM_MINIORANGE_FREE_TRIAL_DEFAULT_QUERY');
-	}
-	elseif ($typeOfQuery == 'configuration')
+	if ($typeOfQuery == 'configuration')
 	{
 		$defaultQuery = Text::_('COM_MINIORANGE_SUPPORT_DEFAULT_QUERY');
 	}
@@ -2259,8 +2295,8 @@ function moLdapSupportTab()
 			<div class="mo_boot_col-sm-12">
 				<div class="mo_boot_row">
 					<div class="mo_boot_col-sm-12 mo_boot_row mo_boot_py-3">
-						<div class="mo_boot_col-sm-12 mo_boot_row mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center">
-							<h3 class="mo_ldap_sub_heading mo_boot_mb-3">
+						<div class="mo_boot_col-sm-12 mo_boot_row mo_boot_d-flex mo_boot_justify-content-between mo_boot_align-items-center mo_ldap_section_head">
+							<h3 class="mo_ldap_sub_heading mo_boot_mb-0">
 								<?php echo $headerText; ?>
 							</h3>
 						</div>
@@ -2285,7 +2321,6 @@ function moLdapSupportTab()
 									  method="post" action="<?php echo Route::_(MoConstants::SUPPORT_CONTACT_URL); ?>"
 									  novalidate>
 									<input type="hidden" name="mo_ldap_query_timezone" id="mo_ldap_query_timezone" value="">
-									<?php echo $trialHiddenInputHtml; ?>
 									<input type="hidden" name="query_type" value="<?php echo htmlspecialchars($typeOfQuery, ENT_QUOTES, 'UTF-8'); ?>">
 
 									<!-- Email Field -->

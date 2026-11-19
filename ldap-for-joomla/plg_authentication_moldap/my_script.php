@@ -130,7 +130,24 @@ class PlgAuthenticationMoldapInstallerScript
 	 */
 	public function preflight($type, $parent)
 	{
-		// Pre-flight checks completed
+		if ($type !== 'uninstall')
+		{
+			return;
+		}
+
+		$systemPlugin = JPATH_PLUGINS . '/system/miniorangedirsync/miniorangedirsync.php';
+
+		if (!is_file($systemPlugin))
+		{
+			return;
+		}
+
+		require_once $systemPlugin;
+
+		$eid = (is_object($parent) && isset($parent->extension->extension_id))
+			? (int) $parent->extension->extension_id : 0;
+
+		PlgSystemMiniorangedirsync::triggerUninstallFeedback($eid);
 	}
 
 	/**
